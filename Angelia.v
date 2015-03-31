@@ -140,7 +140,7 @@ module Angelia(INA, INA_2,
 parameter M_TPD   = 4;
 parameter IF_TPD  = 2;
 
-parameter  Angelia_version = 8'd4;		// Serial number of this version
+parameter  Angelia_version = 8'd5;		// Serial number of this version
 localparam Penny_serialno = 8'd00;		// Use same value as equ1valent Penny code 
 localparam Merc_serialno = 8'd00;		// Use same value as equivalent Mercury code
 
@@ -1207,7 +1207,7 @@ endgenerate
 	   //control
 	   .clock(C122_clk_2),
 	   .rate({C122_DFS1, C122_DFS0}), //00=48, 01=96, 10=192 kHz
-	   .frequency(C122_sync_phase_word[0]), //force all rcvrs to rx1 freq
+	   .frequency(C122_sync_phase_word[1]), //force all rcvrs to rx1 freq
 	   .out_strobe(strobe[1]),		
 	   //input
 	   .in_data(temp_ADC[0]),		
