@@ -80,6 +80,8 @@
 	`					- Released as v0.5
 	17 August      - switched ADC inputs back to normal 
 	               - Released as v0.6
+	18 August		- fixed diversity bug (forced Rx1/Rx2 freq equal when common_Merc_freq asserted)
+						- Released as v0.7
 	
 	*** change global clock name **** 
   
@@ -144,7 +146,7 @@ module Angelia(INA, INA_2,
 parameter M_TPD   = 4;
 parameter IF_TPD  = 2;
 
-parameter  Angelia_version = 8'd6;		// Serial number of this version
+parameter  Angelia_version = 8'd7;		// Serial number of this version
 localparam Penny_serialno = 8'd00;		// Use same value as equ1valent Penny code 
 localparam Merc_serialno = 8'd00;		// Use same value as equivalent Mercury code
 
@@ -1019,7 +1021,7 @@ begin
 		if (INA_2[0]) temp_ADC[1] <= {~INA_2[15:1], INA_2[0]};
 		else temp_ADC[1] <= INA_2;	
 	end
-	else temp_ADC[1] <= INA_2; //{INA_2[15:14],1'b0, INA_2[12:0]}; //INA_2;   ......TEST/...JAM
+	else temp_ADC[1] <= INA_2;
 	
 end 
 
@@ -1128,6 +1130,7 @@ wire      [63:0] C122_ratio_Tx;
 wire      [23:0] rx_I [0:NR-1];
 wire      [23:0] rx_Q [0:NR-1];
 wire             strobe [0:NR-1];
+wire		 [31:0] Rx2_phase_word;
 wire  IF_IQ_Data_rdy;
 wire [47:0] IF_IQ_Data;
 
@@ -1150,6 +1153,9 @@ generate
     end	 
   end
 endgenerate
+
+//assign phase word for Rx2 depending upon whether common_Merc_freq is asserted
+assign Rx2_phase_word = common_Merc_freq ? C122_sync_phase_word[0] : C122_sync_phase_word[1];
 
 // calc frequency phase word for Tx
 assign C122_ratio_Tx = C122_frequency_HZ_Tx * M2;
@@ -1198,7 +1204,7 @@ endgenerate
 	   //control
 	   .clock(C122_clk),
 	   .rate({C122_DFS1, C122_DFS0}), //00=48, 01=96, 10=192 kHz
-	   .frequency(C122_sync_phase_word[0]), //force all rcvrs to rx1 freq
+	   .frequency(C122_sync_phase_word[0]),
 	   .out_strobe(strobe[0]),		
 	   //input
 	   .in_data(temp_ADC[0]),		
@@ -1211,7 +1217,7 @@ endgenerate
 	   //control
 	   .clock(C122_clk_2),
 	   .rate({C122_DFS1, C122_DFS0}), //00=48, 01=96, 10=192 kHz
-	   .frequency(C122_sync_phase_word[1]), //force all rcvrs to rx1 freq
+	   .frequency(Rx2_phase_word), //force Rx2 to be same freq as Rx1 when common_Merc_freq is set
 	   .out_strobe(strobe[1]),		
 	   //input
 	   .in_data(temp_ADC[1]),		
@@ -1746,6 +1752,7 @@ reg			IF_DFS0;
 reg   [7:0] IF_Drive_Level; 		// Tx drive level
 reg         IF_Mic_boost;			// Mic boost 0 = 0dB, 1 = 20dB
 reg         IF_Line_In;				// Selects input, mic = 0, line = 1
+reg			common_Merc_freq;		// when set forces Rx2 freq to Rx1 freq
 
 always @ (posedge IF_clk)
 begin 
@@ -1767,6 +1774,7 @@ begin
     IF_TX_relay        <= 2'b0;    	// decode Alex Tx Relays
     IF_duplex          <= 1'b0;    	// not in duplex mode
 	 IF_last_chan       <= 3'b000;  	// default single receiver
+	 common_Merc_freq   <= 1'b0;		// default independent freq control for Rx2
     IF_Mic_boost       <= 1'b0;    	// mic boost off 
     IF_Drive_Level     <= 8'b0;	   // drive at minimum
 	IF_Line_In			<= 1'b0;			// select Mic input, not Line in
@@ -1795,6 +1803,7 @@ begin
       IF_TX_relay         <= IF_Rx_ctrl_4[1:0]; // decode Alex Tx Relays
       IF_duplex           <= IF_Rx_ctrl_4[2];   // save duplex mode
       IF_last_chan	     <= IF_Rx_ctrl_4[5:3]; // number of IQ streams to send to PC
+		common_Merc_freq	  <= IF_Rx_ctrl_4[7];   // diversity mode, Rx1/Rx2 freq forced equal if set
     end
     if (IF_Rx_ctrl_0[7:1] == 7'b0001_001)
     begin
