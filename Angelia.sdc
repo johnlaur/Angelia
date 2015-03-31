@@ -25,19 +25,19 @@ create_clock -period  25.000MHz	-name PHY_RX_CLOCK	[get_ports PHY_RX_CLOCK]
 create_clock -name virt_PHY_RX_CLOCK 	-period 8.000 
 create_clock -name virt_122MHz 		-period 8.138
 create_clock -name virt_122MHz_2 	-period 8.138
-create_clock -name virt_CBCLK				-period 325.52
+create_clock -name virt_CBCLK		-period 325.52
 
 derive_pll_clocks
 
 derive_clock_uncertainty
 
 #assign more familiar names!
-set CMCLK  			PLL_IF_inst|altpll_component|auto_generated|pll1|clk[1]
-set CBCLK  			PLL_IF_inst|altpll_component|auto_generated|pll1|clk[2]
-set CLRCLK 			PLL_IF_inst|altpll_component|auto_generated|pll1|clk[3]
+set CMCLK  		PLL_IF_inst|altpll_component|auto_generated|pll1|clk[1]
+set CBCLK  		PLL_IF_inst|altpll_component|auto_generated|pll1|clk[2]
+set CLRCLK 		PLL_IF_inst|altpll_component|auto_generated|pll1|clk[3]
 set EEPROM_clock 	PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0]
-set clock_12_5MHz PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1]
-set DAC_clock_90	PLL_inst|altpll_component|auto_generated|pll1|clk[1]
+set clock_12_5MHz 	PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1]
+set DAC_clock_15	PLL_inst|altpll_component|auto_generated|pll1|clk[1]
 
 #*************************************************************************************
 # Create Generated Clock
@@ -116,8 +116,8 @@ set_input_delay -clock LTC2208_122MHz_2 1.000  { INA_2[*]}
 set_output_delay -add_delay -max -clock PHY_CLK125 1.500  { PHY_TX[*] PHY_TX_EN PHY_TX_CLOCK }
 set_output_delay -add_delay -min -clock PHY_CLK125 -0.500 { PHY_TX[*] PHY_TX_EN PHY_TX_CLOCK } 
 
-# Set 90 degree DAC data clock to data 
-set_output_delay 1.00 -clock $DAC_clock_90 { DACD[*]}
+# Set 15 degree DAC data clock to data 
+set_output_delay 1.00 -clock $DAC_clock_15 { DACD[*]}
  
 #122.88MHz clock  
 #set_output_delay  1.000 -clock _122MHz   { DACD[*] FPGA_PLL DAC_ALC}
@@ -159,6 +159,7 @@ set_max_delay -from _122MHz -to PLL_inst|altpll_component|auto_generated|pll1|cl
 
 set_max_delay -from PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1] -to PHY_CLK125 11
 
+#set_max_delay -from LTC2208_122MHz -to _122MHz 10
 set_max_delay -from LTC2208_122MHz -to LTC2208_122MHz 14
 set_max_delay -from LTC2208_122MHz -to PLL_IF_inst|altpll_component|auto_generated|pll1|clk[2] 9
 
@@ -177,8 +178,6 @@ set_max_delay -from PLL_inst|altpll_component|auto_generated|pll1|clk[1] -to PLL
 #************************************************************************************
 # Set Minimum Delay (for hold or removal; low-level, over-riding timing adjustments)
 #************************************************************************************
-
-#set_min_delay -from _122MHz -to _122MHz -2
 
 
 
