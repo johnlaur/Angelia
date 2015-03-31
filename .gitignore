@@ -6,6 +6,7 @@
 
 # Incremental compiliation and ModelSim files
 [Dd][Bb]/
+[Ii]ncremental_[Dd][Bb]/
 [Ss]imulation/
 
 # Report files
