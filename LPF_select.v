@@ -50,7 +50,7 @@ output reg   [6:0] LPF;
 always @(posedge clock)  
 begin 
 	if  	(frequency > 32000000) 	 LPF <= 7'b0010000;		// > 10m so use 6m LPF
-	else if (frequency > 26000000) LPF <= 7'b0100000;  	// > 12m so use 12/10m LPF ... ANAN-100D
+	else if (frequency > 27000000) LPF <= 7'b0100000;  	// > 12m so use 12/10m LPF ... ANAN-100D
 	else if (frequency > 15000000) LPF <= 7'b1000000;  	// > 20m so use 17/15m LPF
 	else if (frequency > 8000000)  LPF <= 7'b0000001;  	// > 40m so use 30/20m LPF  
 	else if (frequency > 4500000)  LPF <= 7'b0000010;  	// > 80m so use 60/40m LPF

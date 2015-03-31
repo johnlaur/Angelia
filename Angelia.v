@@ -163,11 +163,10 @@
 						- changed version number to v2.7
 	7 Feb 2014		- reduced the EEPROM erase time, in ASMI_interface.v, when loading firmware via ethernet connection
 						- changed version number to v2.8
+	9 Feb 2014		- added code to double buffer data to the SPI Alex bus across differing clock domains to
+						  improve reliability in filter switching in Alex and ANAN-100D PA
+						- change version number to v2.9
 						
-
-	
-
-
 	
 *** change global clock name **** 
   
@@ -378,7 +377,7 @@ assign  IO1 = 1'b0;  						// low to enable, high to mute
 parameter M_TPD   = 4;
 parameter IF_TPD  = 2;
 
-parameter  Angelia_version = 8'd28;		// Serial number of this version
+parameter  Angelia_version = 8'd29;		// Serial number of this version
 localparam Penny_serialno = 8'd00;		// Use same value as equ1valent Penny code 
 localparam Merc_serialno = 8'd00;		// Use same value as equivalent Mercury code
 
@@ -390,10 +389,11 @@ localparam read_reg_address = 5'd31; 	// PHY register to read from - gives conne
 
 
 //--------------------------------------------------------------
-// Reset Lines - C122_rst, IF_rst
+// Reset Lines - C122_rst, IF_rst, SPI_Alex_reset
 //--------------------------------------------------------------
 
 wire  IF_rst;
+wire SPI_Alex_rst;
 	
 assign IF_rst 	 = (!IF_locked || reset);		// hold code in reset until PLLs are locked & PHY operational
 
@@ -402,6 +402,9 @@ assign PHY_RESET_N = 1'b1;  						// Allow PYH to run for now
 // transfer IF_rst to 122.88MHz clock domain to generate C122_rst
 cdc_sync #(1)
 	reset_C122 (.siga(IF_rst), .rstb(IF_rst), .clkb(C122_clk), .sigb(C122_rst)); // 122.88MHz clock domain reset
+	
+cdc_sync #(1)
+	reset_Alex (.siga(IF_rst), .rstb(IF_rst), .clkb(SPI_clk), .sigb(SPI_Alex_rst));  // SPI_clk domain reset
 	
 //---------------------------------------------------------
 //		CLOCKS
@@ -2403,9 +2406,11 @@ reg  [31:0] SPI_Alex_data;
 
 assign C122_Alex_data = {C122_Alex_Tx_data[15:0], C122_Alex_Rx_data[15:0]};
 
-// should move Alex data into SPI_clk domain, but since it changes slowly should be OK for now. 
+// move Alex data into SPI_clk domain 
+cdc_sync #(32)
+	SPI_Alex (.siga(C122_Alex_data), .rstb(SPI_Alex_rst), .clkb(SPI_clk), .sigb(SPI_Alex_data));
 
-SPI Alex_SPI_Tx (.Alex_data(C122_Alex_data), .SPI_data(Alex_SPI_SDO),
+SPI Alex_SPI_Tx (.Alex_data(SPI_Alex_data), .SPI_data(Alex_SPI_SDO),
                  .SPI_clock(Alex_SPI_SCK), .Tx_load_strobe(SPI_TX_LOAD),
                  .Rx_load_strobe(SPI_RX_LOAD), .spi_clock(SPI_clk));	
 

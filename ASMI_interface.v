@@ -99,7 +99,7 @@ case (state)
 		write_enable <= 0;
 		sector_erase <= 0;
 		if (busy) state <= 2;
-		else if (address <= 24'h300000) begin 
+		else if (address != 24'h300000) begin 
 				address <= address + 24'h040000;
 				state <= 1;
 		end 
