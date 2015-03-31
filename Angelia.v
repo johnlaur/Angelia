@@ -218,7 +218,9 @@
 		14 Dec 2014 - Fixed intermittent PTT to Alex/PA board problems by sending Alex/PA relay data three times
 						  via the SPI bus when the Alex data changes, ensuring positive relay control to all 
 						  Alex/PA relays
-						- Changed version number to v4.3
+						- Changed version number to v4.3						
+		23 Dec 2014 - Changed timing to reduce noise output on Tx and cure other noise issues on some radios.
+						- Changed version number to v4.4
 						
 *** change global clock name **** 
   
@@ -429,7 +431,7 @@ assign  IO1 = 1'b0;  						// low to enable, high to mute
 parameter M_TPD   = 4;
 parameter IF_TPD  = 2;
 
-parameter  Angelia_version = 8'd43;		// Serial number of this version
+parameter  Angelia_version = 8'd44;		// Serial number of this version
 localparam Penny_serialno = 8'd00;		// Use same value as equ1valent Penny code 
 localparam Merc_serialno = 8'd00;		// Use same value as equivalent Mercury code
 
