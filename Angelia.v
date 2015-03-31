@@ -76,6 +76,10 @@
 	16 August		- fixed INA_2[9] pin assignment error; moved INA_2[9] from FPGA pin L26 to L27
 						- switched ADC "A" and ADC "B" inputs to receiver modules for stability test
 						- Released as v0.4
+	17 August      - added independent freq for Rx2
+	`					- Released as v0.5
+	17 August      - switched ADC inputs back to normal 
+	               - Released as v0.6
 	
 	*** change global clock name **** 
   
@@ -140,7 +144,7 @@ module Angelia(INA, INA_2,
 parameter M_TPD   = 4;
 parameter IF_TPD  = 2;
 
-parameter  Angelia_version = 8'd5;		// Serial number of this version
+parameter  Angelia_version = 8'd6;		// Serial number of this version
 localparam Penny_serialno = 8'd00;		// Use same value as equ1valent Penny code 
 localparam Merc_serialno = 8'd00;		// Use same value as equivalent Mercury code
 
@@ -1197,7 +1201,7 @@ endgenerate
 	   .frequency(C122_sync_phase_word[0]), //force all rcvrs to rx1 freq
 	   .out_strobe(strobe[0]),		
 	   //input
-	   .in_data(temp_ADC[1]),		
+	   .in_data(temp_ADC[0]),		
 	   //output
 	   .out_data_I(rx_I[0]),
 	   .out_data_Q(rx_Q[0])
@@ -1210,7 +1214,7 @@ endgenerate
 	   .frequency(C122_sync_phase_word[1]), //force all rcvrs to rx1 freq
 	   .out_strobe(strobe[1]),		
 	   //input
-	   .in_data(temp_ADC[0]),		
+	   .in_data(temp_ADC[1]),		
 	   //output
 	   .out_data_I(rx_I[1]),
 	   .out_data_Q(rx_Q[1])
