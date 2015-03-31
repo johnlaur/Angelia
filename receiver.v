@@ -22,6 +22,9 @@ Boston, MA  02110-1301, USA.
 
 
 //If you make any changes to this file, please leave a comment here
+//
+// - added x2 gain to both I and Q output values to make the overall gain of this 
+//   rx module consistent with the overall gain of "standard" HPSDR rx modules -- K5SO 14DEC12
 
 
 
@@ -40,10 +43,16 @@ module receiver(
   );
 
 
+ // gain adjustment
+wire signed [23:0] out_data_I2;
+wire signed [23:0] out_data_Q2;
+
+assign out_data_I = (out_data_I2 <<< 1);
+assign out_data_Q = (out_data_Q2 <<< 1);
+
+ 
   
-  
-  
-  
+   
 //------------------------------------------------------------------------------
 //                               cordic
 //------------------------------------------------------------------------------
@@ -159,7 +168,7 @@ fir #(.OUT_WIDTH(24))
     .start(cic_outstrobe_2), 
     .coeff(fir_coeff),
     .in_data(cic_outdata_I2),
-    .out_data(out_data_I),
+    .out_data(out_data_I2),
     .out_strobe(out_strobe)
     );
 
@@ -170,7 +179,7 @@ fir #(.OUT_WIDTH(24))
     .start(cic_outstrobe_2),
     .coeff(fir_coeff),
     .in_data(cic_outdata_Q2),
-    .out_data(out_data_Q),
+    .out_data(out_data_Q2),
     .out_strobe()
     );
 

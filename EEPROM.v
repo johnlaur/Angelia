@@ -217,7 +217,7 @@ begin
 				end
 			end
 
-			else if (shift_count != 49) begin 
+			else if (shift_count != 48) begin 
 				This_MAC <= {This_MAC[46:0],SO};
 				shift_count <= shift_count + 1'b1;
 				EEPROM <= EEPROM + 1'b1;

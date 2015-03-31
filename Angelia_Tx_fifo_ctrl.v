@@ -142,6 +142,10 @@ begin
     1: num_loops = 35; //(512 - 8)bytes/14 - 1 = 35
     2: num_loops = 24; //(512 - 8)bytes/20 - 1 = 24.2
     3: num_loops = 18; //(512 - 8)bytes/26 - 1 = 18.38
+    4: num_loops = 14; 
+    5: num_loops = 12; 
+    6: num_loops = 10; 
+    7: num_loops = 9; 
         
     default: num_loops = 62;
   endcase
@@ -154,6 +158,10 @@ begin
     1: pad_loops = 0;  
     2: pad_loops = 2;  
     3: pad_loops = 5; 
+    4: pad_loops = 12; 
+    5: pad_loops = 5; 
+    6: pad_loops = 10; 
+    7: pad_loops = 2;     
     
     default: pad_loops = 0;
   endcase

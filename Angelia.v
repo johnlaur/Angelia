@@ -1,6 +1,6 @@
 /***********************************************************
 *
-*	Anjelia - Ethernet 
+*	Angelia - Ethernet 
 *
 ************************************************************/
 
@@ -90,6 +90,14 @@
 						- added support for Apollo
 						- added support for the 31dB step attenuators (1 dB steps)
 						- Released as v0.8
+	6  December		- fixed bug with "preamp" selection causing inverted "preamp" logic
+						- Released as v0.9
+	9  December		- modified ASMI_interface module to erase EPCS addresses to 0x2C0000 when loading code to 
+							accommodate the size of the present FPGA program design (~1.3 MB) plus some for future design expansion
+						- added support for seven receivers
+						- Released as v1.0
+	14 December		- modified the receiver module to yield 6 dB greater overall gain, to match Hermes/Mercury rx module gain
+						- Released as v1.1
 	
 	*** change global clock name **** 
   
@@ -154,7 +162,7 @@ module Angelia(INA, INA_2,
 parameter M_TPD   = 4;
 parameter IF_TPD  = 2;
 
-parameter  Angelia_version = 8'd8;		// Serial number of this version
+parameter  Angelia_version = 8'd11;		// Serial number of this version
 localparam Penny_serialno = 8'd00;		// Use same value as equ1valent Penny code 
 localparam Merc_serialno = 8'd00;		// Use same value as equivalent Mercury code
 
@@ -1060,14 +1068,15 @@ cdc_sync #(32)
 cdc_sync #(32)
 	freq4 (.siga(IF_frequency[4]), .rstb(C122_rst), .clkb(C122_clk), .sigb(C122_frequency_HZ[3])); // transfer Rx4 frequency
 	
-//cdc_sync #(32)
-//	freq4 (.siga(IF_frequency[5]), .rstb(C122_rst), .clkb(C122_clk), .sigb(C122_frequency_HZ[4])); // transfer Rx5 frequency
+cdc_sync #(32)
+	freq5 (.siga(IF_frequency[5]), .rstb(C122_rst), .clkb(C122_clk), .sigb(C122_frequency_HZ[4])); // transfer Rx5 frequency
 
-//cdc_sync #(32)
-//	freq4 (.siga(IF_frequency[6]), .rstb(C122_rst), .clkb(C122_clk), .sigb(C122_frequency_HZ[3])); // transfer Rx6 frequency
+cdc_sync #(32)
+	freq6 (.siga(IF_frequency[6]), .rstb(C122_rst), .clkb(C122_clk), .sigb(C122_frequency_HZ[5])); // transfer Rx6 frequency
 
-//cdc_sync #(32)
-//	freq4 (.siga(IF_frequency[7]), .rstb(C122_rst), .clkb(C122_clk), .sigb(C122_frequency_HZ[3])); // transfer Rx7 frequency
+cdc_sync #(32)
+	freq7 (.siga(IF_frequency[7]), .rstb(C122_rst), .clkb(C122_clk), .sigb(C122_frequency_HZ[6])); // transfer Rx7 frequency
+
 
 	cdc_sync #(32)
 	LR_audio (.siga({IF_Left_Data,IF_Right_Data}), .rstb(C122_rst), .clkb(C122_clk), .sigb(C122_LR_data)); // transfer Left and Right audio
@@ -1140,7 +1149,7 @@ pulsegen cdc_m   (.sig(IF_CLRCLK), .rst(IF_rst), .clk(IF_clk), .pulse(IF_get_sam
 */
 
 
-localparam NR = 4; // number of receivers to implement
+localparam NR = 7; // number of receivers to implement
 
 reg       [31:0] C122_frequency_HZ [0:NR-1];   // frequency control bits for CORDIC
 reg       [31:0] C122_frequency_HZ_Tx;
@@ -1281,6 +1290,47 @@ endgenerate
 	   .out_data_Q(rx_Q[3])
 	   );
 
+// receiver 5, uses ADC 1
+	 receiver receiver_inst4(
+	   //control
+	   .clock(C122_clk),
+	   .rate({C122_DFS1, C122_DFS0}), //00=48, 01=96, 10=192 kHz
+	   .frequency(C122_sync_phase_word[4]),
+	   .out_strobe(strobe[4]),		
+	   //input
+	   .in_data(temp_ADC[0]),		
+	   //output
+	   .out_data_I(rx_I[4]),
+	   .out_data_Q(rx_Q[4])
+	   );
+
+// receiver 6, uses ADC 2
+	 receiver receiver_inst5(
+	   //control
+	   .clock(C122_clk),
+	   .rate({C122_DFS1, C122_DFS0}), //00=48, 01=96, 10=192 kHz
+	   .frequency(C122_sync_phase_word[5]),
+	   .out_strobe(strobe[5]),		
+	   //input
+	   .in_data(temp_ADC[1]),		
+	   //output
+	   .out_data_I(rx_I[5]),
+	   .out_data_Q(rx_Q[5])
+	   );
+
+// receiver 7, uses ADC 1
+	 receiver receiver_inst6(
+	   //control
+	   .clock(C122_clk),
+	   .rate({C122_DFS1, C122_DFS0}), //00=48, 01=96, 10=192 kHz
+	   .frequency(C122_sync_phase_word[6]),
+	   .out_strobe(strobe[6]),		
+	   //input
+	   .in_data(temp_ADC[0]),		
+	   //output
+	   .out_data_I(rx_I[6]),
+	   .out_data_Q(rx_Q[6])
+	   );
 
 //---------------------------------------------------------
 //    ADC SPI interface 
@@ -1803,7 +1853,7 @@ reg         Preamp;					// selects input attenuator setting, 1 = 20dB, 0 = 0dB
 reg   [1:0] IF_TX_relay; 			// Tx relay setting on Alex
 reg         IF_Rout;     			// Rx1 out on Alex
 reg   [1:0] IF_RX_relay; 			// Rx relay setting on Alex 
-reg  [31:0] IF_frequency[0:4]; 	// Tx, Rx1, Rx2, Rx3, Rx4
+reg  [31:0] IF_frequency[0:7]; 	// Tx, Rx1, Rx2, Rx3, Rx4, Rx5, Rx6, Rx7
 reg         IF_duplex;
 reg         IF_DFS1;
 reg			IF_DFS0;
@@ -1871,7 +1921,7 @@ begin
       IF_OC               <= IF_Rx_ctrl_2[7:1]; // decode open collectors on Penelope
       // RX_CONTROL_3
       IF_ATTEN            <= IF_Rx_ctrl_3[1:0]; // decode Alex attenuator setting 
-      Preamp              <= ~IF_Rx_ctrl_3[2];  // decode Preamp (Attenuator)  1 = On, 0 = Off
+      Preamp              <= IF_Rx_ctrl_3[2];  // decode Preamp (Attenuator)  1 = On, 0 = Off
       IF_DITHER           <= IF_Rx_ctrl_3[3];   // decode dither on or off
       IF_RAND             <= IF_Rx_ctrl_3[4];   // decode randomizer on or off
       IF_RX_relay         <= IF_Rx_ctrl_3[6:5]; // decode Alex Rx relays
@@ -1913,6 +1963,11 @@ begin
     IF_frequency[0]    <= 32'd0;
     IF_frequency[1]    <= 32'd0;
     IF_frequency[2]    <= 32'd0;
+    IF_frequency[3]    <= 32'd0;
+    IF_frequency[4]    <= 32'd0;
+    IF_frequency[5]    <= 32'd0;
+    IF_frequency[6]    <= 32'd0;
+    IF_frequency[7]    <= 32'd0;
   end
   else if (IF_Rx_save)
   begin
@@ -1938,6 +1993,15 @@ begin
 
 		 if (IF_Rx_ctrl_0[7:1] == 7'b0000_101) // decode Rx4 frequency
        IF_frequency[4] <= {IF_Rx_ctrl_1, IF_Rx_ctrl_2, IF_Rx_ctrl_3, IF_Rx_ctrl_4};  // Rx4 frequency 
+
+		 if (IF_Rx_ctrl_0[7:1] == 7'b0000_110) // decode Rx5 frequency
+       IF_frequency[5] <= {IF_Rx_ctrl_1, IF_Rx_ctrl_2, IF_Rx_ctrl_3, IF_Rx_ctrl_4};  // Rx5 frequency 
+
+		 if (IF_Rx_ctrl_0[7:1] == 7'b0000_111) // decode Rx6 frequency
+       IF_frequency[6] <= {IF_Rx_ctrl_1, IF_Rx_ctrl_2, IF_Rx_ctrl_3, IF_Rx_ctrl_4};  // Rx6 frequency 
+
+		 if (IF_Rx_ctrl_0[7:1] == 7'b0001_000) // decode Rx7 frequency
+       IF_frequency[7] <= {IF_Rx_ctrl_1, IF_Rx_ctrl_2, IF_Rx_ctrl_3, IF_Rx_ctrl_4};  // Rx7 frequency 
  end
 end
 
@@ -1986,48 +2050,68 @@ always @ (posedge C122_clk) begin
 		C122_freq_max <= C122_frequency_HZ[0];
 		C122_freq_min <= C122_frequency_HZ[0];
 
-		// find max freq of the four receiver frequencies
-		if (C122_frequency_HZ[1] >= C122_frequency_HZ[0]) begin 
-			if (C122_frequency_HZ[1] >= C122_frequency_HZ[2]) begin 
-				if (C122_frequency_HZ[1] >= C122_frequency_HZ[3]) C122_freq_max <= C122_frequency_HZ[1];
-				else C122_freq_max <= C122_frequency_HZ[3];
-			end 
-			else begin 
-				if (C122_frequency_HZ[2] >= C122_frequency_HZ[3]) C122_freq_max <= C122_frequency_HZ[2];
-				else C122_freq_max <= C122_frequency_HZ[3];
-			end			
-		end 
-		else begin
-			if (C122_frequency_HZ[2] >= C122_frequency_HZ[0]) begin 
-				if (C122_frequency_HZ[2] >= C122_frequency_HZ[3]) C122_freq_max <= C122_frequency_HZ[2];
-				else C122_freq_max <= C122_frequency_HZ[3];
-			end 
-			else if (C122_frequency_HZ[3] > C122_frequency_HZ[0]) C122_freq_max <= C122_frequency_HZ[3];
-		end 
-		
-		// find min freq of the four receiver frequencies
-		if (C122_frequency_HZ[1] < C122_frequency_HZ[0] && C122_frequency_HZ[1] > 0) begin 
-			if (C122_frequency_HZ[1] < C122_frequency_HZ[2]) begin 
-				if (C122_frequency_HZ[1] < C122_frequency_HZ[3]) C122_freq_min <= C122_frequency_HZ[1];
-				else begin
-					if (C122_frequency_HZ[3] > 0) C122_freq_min <= C122_frequency_HZ[3];
-					else C122_freq_min <= C122_frequency_HZ[1];
-				end
-			end 
-			else begin 
-				if (C122_frequency_HZ[2] < C122_frequency_HZ[3] && C122_frequency_HZ[2] > 0) C122_freq_min <= C122_frequency_HZ[2];
-				else begin
-					if (C122_frequency_HZ[3] > 0) C122_freq_min <= C122_frequency_HZ[3];
-					else if (C122_frequency_HZ[2] > 0) C122_freq_min <= C122_frequency_HZ[2];
-				end
-			end 			
-		end 
-		else begin 
-			if (C122_frequency_HZ[2] < C122_frequency_HZ[0] && C122_frequency_HZ[2] > 0) begin 
-				if (C122_frequency_HZ[2] < C122_frequency_HZ[3]) C122_freq_min <= C122_frequency_HZ[2];
-				else if (C122_frequency_HZ[3] > 0) C122_freq_min <= C122_frequency_HZ[3];
-			end 
-		end 
+		// find max freq of the seven receiver frequencies
+		if (C122_frequency_HZ[1] > C122_frequency_HZ[0] && C122_frequency_HZ[1] >= C122_frequency_HZ[2] &&
+			 C122_frequency_HZ[1] >= C122_frequency_HZ[3] && C122_frequency_HZ[1] >= C122_frequency_HZ[4] &&
+			 C122_frequency_HZ[1] >= C122_frequency_HZ[5] && C122_frequency_HZ[1] >= C122_frequency_HZ[6]) 
+			 C122_freq_max <= C122_frequency_HZ[1];
+
+		if (C122_frequency_HZ[2] > C122_frequency_HZ[0] && C122_frequency_HZ[2] >= C122_frequency_HZ[1] &&
+			 C122_frequency_HZ[2] >= C122_frequency_HZ[3] && C122_frequency_HZ[2] >= C122_frequency_HZ[4] &&
+			 C122_frequency_HZ[2] >= C122_frequency_HZ[5] && C122_frequency_HZ[2] >= C122_frequency_HZ[6]) 
+			 C122_freq_max <= C122_frequency_HZ[2];
+			 
+		if (C122_frequency_HZ[3] > C122_frequency_HZ[0] && C122_frequency_HZ[3] >= C122_frequency_HZ[1] &&
+			 C122_frequency_HZ[3] >= C122_frequency_HZ[2] && C122_frequency_HZ[3] >= C122_frequency_HZ[4] &&
+			 C122_frequency_HZ[3] >= C122_frequency_HZ[5] && C122_frequency_HZ[3] >= C122_frequency_HZ[6]) 
+			 C122_freq_max <= C122_frequency_HZ[3];
+			 
+		if (C122_frequency_HZ[4] > C122_frequency_HZ[0] && C122_frequency_HZ[4] >= C122_frequency_HZ[1] &&
+			 C122_frequency_HZ[4] >= C122_frequency_HZ[2] && C122_frequency_HZ[4] >= C122_frequency_HZ[3] &&
+			 C122_frequency_HZ[4] >= C122_frequency_HZ[5] && C122_frequency_HZ[4] >= C122_frequency_HZ[6]) 
+			 C122_freq_max <= C122_frequency_HZ[4];
+
+		if (C122_frequency_HZ[5] > C122_frequency_HZ[0] && C122_frequency_HZ[5] >= C122_frequency_HZ[1] &&
+			 C122_frequency_HZ[5] >= C122_frequency_HZ[2] && C122_frequency_HZ[5] >= C122_frequency_HZ[3] &&
+			 C122_frequency_HZ[5] >= C122_frequency_HZ[4] && C122_frequency_HZ[5] >= C122_frequency_HZ[6]) 
+			 C122_freq_max <= C122_frequency_HZ[5];
+
+		if (C122_frequency_HZ[6] > C122_frequency_HZ[0] && C122_frequency_HZ[4] >= C122_frequency_HZ[1] &&
+			 C122_frequency_HZ[6] >= C122_frequency_HZ[2] && C122_frequency_HZ[4] >= C122_frequency_HZ[3] &&
+			 C122_frequency_HZ[6] >= C122_frequency_HZ[4] && C122_frequency_HZ[6] >= C122_frequency_HZ[5]) 
+			 C122_freq_max <= C122_frequency_HZ[6];
+
+
+		// find min freq of the seven receiver frequencies
+		if (C122_frequency_HZ[1] < C122_frequency_HZ[0] && C122_frequency_HZ[1] <= C122_frequency_HZ[2] &&
+			 C122_frequency_HZ[1] <= C122_frequency_HZ[3] && C122_frequency_HZ[1] <= C122_frequency_HZ[4] &&
+			 C122_frequency_HZ[1] <= C122_frequency_HZ[5] && C122_frequency_HZ[1] <= C122_frequency_HZ[6] &&
+			 C122_frequency_HZ[1] > 0) C122_freq_min <= C122_frequency_HZ[1];
+
+		if (C122_frequency_HZ[2] < C122_frequency_HZ[0] && C122_frequency_HZ[2] <= C122_frequency_HZ[1] &&
+			 C122_frequency_HZ[2] <= C122_frequency_HZ[3] && C122_frequency_HZ[2] <= C122_frequency_HZ[4] &&
+			 C122_frequency_HZ[2] <= C122_frequency_HZ[5] && C122_frequency_HZ[2] <= C122_frequency_HZ[6] &&
+			 C122_frequency_HZ[2] > 0) C122_freq_min <= C122_frequency_HZ[2];
+
+		if (C122_frequency_HZ[3] < C122_frequency_HZ[0] && C122_frequency_HZ[3] <= C122_frequency_HZ[1] &&
+			 C122_frequency_HZ[3] <= C122_frequency_HZ[2] && C122_frequency_HZ[3] <= C122_frequency_HZ[4] &&
+			 C122_frequency_HZ[3] <= C122_frequency_HZ[5] && C122_frequency_HZ[3] <= C122_frequency_HZ[6] &&
+			 C122_frequency_HZ[3] > 0) C122_freq_min <= C122_frequency_HZ[3];
+			 
+		if (C122_frequency_HZ[4] < C122_frequency_HZ[0] && C122_frequency_HZ[4] <= C122_frequency_HZ[1] &&
+			 C122_frequency_HZ[4] <= C122_frequency_HZ[2] && C122_frequency_HZ[4] <= C122_frequency_HZ[3] &&
+			 C122_frequency_HZ[4] <= C122_frequency_HZ[5] && C122_frequency_HZ[4] <= C122_frequency_HZ[6] &&
+			 C122_frequency_HZ[4] > 0) C122_freq_min <= C122_frequency_HZ[4];
+
+		if (C122_frequency_HZ[5] < C122_frequency_HZ[0] && C122_frequency_HZ[5] <= C122_frequency_HZ[1] &&
+			 C122_frequency_HZ[5] <= C122_frequency_HZ[2] && C122_frequency_HZ[5] <= C122_frequency_HZ[3] &&
+			 C122_frequency_HZ[5] <= C122_frequency_HZ[4] && C122_frequency_HZ[5] <= C122_frequency_HZ[6] &&
+			 C122_frequency_HZ[5] > 0) C122_freq_min <= C122_frequency_HZ[5];
+
+		if (C122_frequency_HZ[6] < C122_frequency_HZ[0] && C122_frequency_HZ[6] <= C122_frequency_HZ[1] &&
+			 C122_frequency_HZ[6] <= C122_frequency_HZ[2] && C122_frequency_HZ[6] <= C122_frequency_HZ[3] &&
+			 C122_frequency_HZ[6] <= C122_frequency_HZ[4] && C122_frequency_HZ[6] <= C122_frequency_HZ[5] &&
+			 C122_frequency_HZ[6] > 0) C122_freq_min <= C122_frequency_HZ[6];
 
 		C122_HPF_freq <= C122_freq_min;
 		C122_LPF_freq <= FPGA_PTT ? C122_frequency_HZ_Tx : C122_freq_max;

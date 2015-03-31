@@ -54,7 +54,6 @@ set_global_assignment -name OUTPUT_IO_TIMING_FAR_END_VMEAS "HALF SIGNAL SWING" -
 set_global_assignment -name SEARCH_PATH Hermes_V1.4/ -tag from_archive
 set_global_assignment -name SEARCH_PATH Hermes_V1.5/ -tag from_archive
 set_global_assignment -name DEVICE_FILTER_SPEED_GRADE 8
-set_global_assignment -name DEVICE_MIGRATION_LIST EP4CE115F29C8
 set_location_assignment PIN_AD27 -to ADCCLK
 set_location_assignment PIN_AE26 -to ADCMISO
 set_location_assignment PIN_AB27 -to ADCMOSI
@@ -169,7 +168,7 @@ set_location_assignment PIN_Y26 -to USEROUT6
 set_location_assignment PIN_B15 -to _122MHz
 set_location_assignment PIN_AE27 -to nADCCS
 set_location_assignment PIN_A4 -to nCS
-set_global_assignment -name CYCLONEIII_CONFIGURATION_DEVICE EPCS64
+set_global_assignment -name CYCLONEIII_CONFIGURATION_DEVICE EPCS128
 set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
 set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
 set_global_assignment -name LL_ROOT_REGION ON -section_id "Root Region"
@@ -247,10 +246,6 @@ set_global_assignment -name VERILOG_FILE fir_coeffs.v
 set_global_assignment -name VERILOG_FILE fir_coeffs_rom.v
 set_global_assignment -name VERILOG_FILE fir_mac.v
 set_global_assignment -name VERILOG_FILE fir_shiftreg.v
-set_global_assignment -name VERILOG_FILE Hermes.v
-set_global_assignment -name VERILOG_FILE Hermes_ADC.v
-set_global_assignment -name VERILOG_FILE Hermes_clk_lrclk_gen.v
-set_global_assignment -name VERILOG_FILE Hermes_Tx_fifo_ctrl.v
 set_global_assignment -name VERILOG_FILE HPF_select.v
 set_global_assignment -name VERILOG_FILE I2S_rcv.v
 set_global_assignment -name VERILOG_FILE I2S_xmit.v
@@ -266,3 +261,8 @@ set_global_assignment -name QIP_FILE PLL_clocks.qip
 set_global_assignment -name QIP_FILE SP_fifo.qip
 set_global_assignment -name VERILOG_FILE memcic.v
 set_global_assignment -name VERILOG_FILE memcic_ram.v
+set_global_assignment -name QIP_FILE ASMI.qip
+set_global_assignment -name QIP_FILE fir_coeffs_rom.qip
+set_global_assignment -name QIP_FILE fir_shiftreg.qip
+set_global_assignment -name QIP_FILE memcic_ram.qip
+set_global_assignment -name QIP_FILE mult_24Sx24S.qip
