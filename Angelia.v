@@ -215,6 +215,10 @@
 							PLL_IF_inst|altpll_component|auto_generated|pll1|clk[2] domain in an effort to 
 							cure CW sidetone stopping on some radios after 20 minutes of operation
 						- Changed version number to v4.2
+		14 Dec 2014 - Fixed intermittent PTT to Alex/PA board problems by sending Alex/PA relay data three times
+						  via the SPI bus when the Alex data changes, ensuring positive relay control to all 
+						  Alex/PA relays
+						- Changed version number to v4.3
 						
 *** change global clock name **** 
   
@@ -425,7 +429,7 @@ assign  IO1 = 1'b0;  						// low to enable, high to mute
 parameter M_TPD   = 4;
 parameter IF_TPD  = 2;
 
-parameter  Angelia_version = 8'd42;		// Serial number of this version
+parameter  Angelia_version = 8'd43;		// Serial number of this version
 localparam Penny_serialno = 8'd00;		// Use same value as equ1valent Penny code 
 localparam Merc_serialno = 8'd00;		// Use same value as equivalent Mercury code
 

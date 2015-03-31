@@ -1,6 +1,7 @@
 // V1.0 25th October 2007
 //
 // Copyright 2006,2007 Phil Harman VK6APH
+// Copyright 2014 Joe Martin K5SO
 //
 //  HPSDR - High Performance Software Defined Radio
 //
@@ -74,7 +75,8 @@
 	Relay selection data is contained in [5:0]HPF
 	All outputs are active high
 
-	SPI data is sent to Alex whenever any of the above data changes
+	SPI data is sent three times to Alex/PA relays to ensure positive relay control
+	whenever Alex data changes...K5SO
 
 */
 
@@ -90,17 +92,21 @@ input wire spi_clock;
 reg [3:0]spi_state;
 reg [4:0]data_count;
 reg [31:0]previous_Alex_data;	// used to detect change in data
+reg [1:0] loop_count;
 
 
 always @ (posedge spi_clock)
 begin
 case (spi_state)
-0:	begin
+0:	begin	
 		if (Alex_data != previous_Alex_data)begin
+			loop_count <= loop_count + 2'b01;
 			data_count <= 31;				// set starting bit count to 31
-			spi_state <= 1;
+			spi_state <= 1;				// go send Alex data
 		end
-		else spi_state <= 0; 			// wait for Alex data to change
+		else begin
+			spi_state <= 0; 			// wait for Alex data to change
+		end
 	end		
 1:	begin
 	SPI_data <= Alex_data[data_count];	// set up data to send
@@ -132,7 +138,7 @@ case (spi_state)
 	end
 6:	begin
 	Rx_load_strobe <= 1'b0;				// reset Rx strobe
-	previous_Alex_data <= Alex_data; // save current data
+	if (loop_count == 2'b11) previous_Alex_data <= Alex_data; // save current data
 	spi_state <= 0;						// reset for next run
 	end
 	
