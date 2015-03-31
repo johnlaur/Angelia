@@ -227,9 +227,11 @@
 		30 Jan 2015 - Set Alex relays to off at power on.
 						- Merged clocking, CW generataion and I2S audio from new protocol code.
 						- Temp disable Apollo interface.
-						- Changed version number to v4.6
-		1 Feb  2015 - Replaced C122_clk_3 entries with C122_clk (C122_clk_3 is non-existent)	
-	
+						- Changed version number to v4.6	
+		 4 Feb 2015 - Changed DAC clock edge to posedge to test for Tx spurious
+		 5 Feb 2015 - Clock DAC data at 90 degrees to ensure data is stable
+						- Replaced C122_clk_3 entries with C122_clk entries instead (C122_clk_3 is non-existent)
+						_ Changed version number to v4.7
 	
 *** change global clock name **** 
   
@@ -440,7 +442,7 @@ assign  IO1 = 1'b0;  						// low to enable, high to mute
 parameter M_TPD   = 4;
 parameter IF_TPD  = 2;
 
-parameter  Angelia_version = 8'd46;		// Serial number of this version
+parameter  Angelia_version = 8'd47;		// Serial number of this version
 localparam Penny_serialno = 8'd00;		// Use same value as equ1valent Penny code 
 localparam Merc_serialno = 8'd00;		// Use same value as equivalent Mercury code
 
@@ -1712,9 +1714,9 @@ cpl_cordic #(.OUT_WIDTH(16))
         = cos(f1 + f2) + j sin(f1 + f2)
 */
 
-// the CORDIC output is stable on the negative edge of the clock
+// clock the DAC data at 90 degrees to the clock to ensure it is stable.
 
-always @ (negedge _122MHz)
+always @ (posedge _122MHz_90)
 	DACD <= C122_cordic_i_out[13:0];   //gain of 4
 
 
@@ -2679,13 +2681,15 @@ debounce de_dash(.clean_pb(clean_dash), .pb(~KEY_DASH), .clk(IF_clk));
 
 wire ref_80khz; 
 wire osc_80khz;
+wire _122MHz_90;
  
 
 // Use a PLL to divide 10MHz clock to 80kHz
 C10_PLL PLL2_inst (.inclk0(OSC_10MHZ), .c0(ref_80khz), .locked());
 
-// Use a PLL to divide 122.88MHz clock to 80kHz	as backup in case 10MHz source is not present							
-C122_PLL PLL_inst (.inclk0(_122MHz), .c0(osc_80khz), .locked());	
+// Use a PLL to divide 122.88MHz clock to 80kHz	as backup in case 10MHz source is not present
+// Generate 122.88MHz clock at 90 degrees for DAC clock							
+C122_PLL PLL_inst (.inclk0(_122MHz), .c0(osc_80khz), .c1(_122MHz_90), .locked());	
 	
 //Apply to EXOR phase detector 
 assign FPGA_PLL = ref_80khz ^ osc_80khz; 

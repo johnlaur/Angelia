@@ -37,6 +37,7 @@ set CBCLK  			PLL_IF_inst|altpll_component|auto_generated|pll1|clk[2]
 set CLRCLK 			PLL_IF_inst|altpll_component|auto_generated|pll1|clk[3]
 set EEPROM_clock 	PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0]
 set clock_12_5MHz PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1]
+set DAC_clock_90	PLL_inst|altpll_component|auto_generated|pll1|clk[1]
 
 #*************************************************************************************
 # Create Generated Clock
@@ -72,6 +73,7 @@ set_clock_groups -asynchronous -group {PHY_CLK125 \
 					PLL_IF_inst|altpll_component|auto_generated|pll1|clk[2] \
 					PLL_IF_inst|altpll_component|auto_generated|pll1|clk[3] \
 					PLL_inst|altpll_component|auto_generated|pll1|clk[0] \
+					PLL_inst|altpll_component|auto_generated|pll1|clk[1] \
 				       } \
 				-group {OSC_10MHZ  PLL2_inst|altpll_component|auto_generated|pll1|clk[0]}\
 				-group {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] }
@@ -113,9 +115,13 @@ set_input_delay -clock LTC2208_122MHz_2 1.000  { INA_2[*]}
 
 set_output_delay -add_delay -max -clock PHY_CLK125 1.500  { PHY_TX[*] PHY_TX_EN PHY_TX_CLOCK }
 set_output_delay -add_delay -min -clock PHY_CLK125 -0.500 { PHY_TX[*] PHY_TX_EN PHY_TX_CLOCK } 
+
+# Set 90 degree DAC data clock to data 
+set_output_delay 1.00 -clock $DAC_clock_90 { DACD[*]}
  
-#122.88MHz clock for Tx DAC 
-set_output_delay  1.000 -clock _122MHz   { DACD[*] FPGA_PLL DAC_ALC}
+#122.88MHz clock  
+#set_output_delay  1.000 -clock _122MHz   { DACD[*] FPGA_PLL DAC_ALC}
+set_output_delay  1.000 -clock _122MHz   { FPGA_PLL DAC_ALC}
 
 # Attenuator - min is referenced to falling edge of clock 
 set_output_delay  10  -clock $CMCLK { ATTN_DATA* ATTN_LE* }
@@ -149,6 +155,7 @@ set_output_delay  10 -clock $clock_12_5MHz {ASMI_interface:ASMI_int_inst|ASMI:AS
 #**************************************************************************************
 
 set_max_delay -from _122MHz -to _122MHz 12
+set_max_delay -from _122MHz -to PLL_inst|altpll_component|auto_generated|pll1|clk[1] 7
 
 set_max_delay -from PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1] -to PHY_CLK125 11
 
@@ -161,6 +168,8 @@ set_max_delay -from PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1] 
 set_max_delay -from PHY_CLK125 -to PHY_RX_CLOCK 5
 
 set_max_delay -from PHY_CLK125 -to PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0] 9
+
+set_max_delay -from PLL_inst|altpll_component|auto_generated|pll1|clk[1] -to PLL_inst|altpll_component|auto_generated|pll1|clk[1] 12
 
 
 
