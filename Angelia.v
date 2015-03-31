@@ -190,6 +190,8 @@
 						- changed the version number to v3.4
 	 6 Jun 2014	   - Added PC control of "atten_on_Tx" via C&C bits C3[4:0] when C0 = 0001_110x
 						- Changed version number to v3.5
+	15 Jun 2014		- Added support for ADC overflow alerting for ADC2 in TXFC module
+						- Changed version number to v3.6
 
 						
 	
@@ -402,7 +404,7 @@ assign  IO1 = 1'b0;  						// low to enable, high to mute
 parameter M_TPD   = 4;
 parameter IF_TPD  = 2;
 
-parameter  Angelia_version = 8'd35;		// Serial number of this version
+parameter  Angelia_version = 8'd36;		// Serial number of this version
 localparam Penny_serialno = 8'd00;		// Use same value as equ1valent Penny code 
 localparam Merc_serialno = 8'd00;		// Use same value as equivalent Mercury code
 
@@ -1797,7 +1799,7 @@ Angelia_Tx_fifo_ctrl #(RX_FIFO_SZ, TX_FIFO_SZ) TXFC
            (IF_rst, IF_clk, IF_tx_fifo_wdata, IF_tx_fifo_wreq, IF_tx_fifo_full,
             IF_tx_fifo_used, IF_tx_fifo_clr, IF_tx_IQ_mic_rdy,
             IF_tx_IQ_mic_data, IF_chan, IF_last_chan, clean_dash, clean_dot, (clean_PTT_in | CW_PTT), OVERFLOW,
-            Penny_serialno, Merc_serialno, Angelia_version, Penny_ALC, AIN1, AIN2,
+            OVERFLOW_2, Penny_serialno, Merc_serialno, Angelia_version, Penny_ALC, AIN1, AIN2,
             AIN3, AIN4, AIN6, IO4, IO5, IO6, IO8, VNA_start, VNA);
 
 //------------------------------------------------------------------------

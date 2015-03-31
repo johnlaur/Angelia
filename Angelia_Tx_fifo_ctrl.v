@@ -59,7 +59,7 @@
 module Angelia_Tx_fifo_ctrl(IF_reset, IF_clk, Tx_fifo_wdata, Tx_fifo_wreq, Tx_fifo_full, Tx_fifo_used,
                     Tx_fifo_clr, Tx_IQ_mic_rdy,
                     Tx_IQ_mic_data, IF_chan, IF_last_chan, clean_dash, clean_dot, clean_PTT_in, ADC_OVERLOAD,
-                    Penny_serialno, Merc_serialno, Angelia_version, Penny_ALC, AIN1, AIN2, AIN3, 
+                    ADC2_OVERLOAD, Penny_serialno, Merc_serialno, Angelia_version, Penny_ALC, AIN1, AIN2, AIN3, 
                     AIN4, AIN6, IO4, IO5, IO6, IO8, VNA_start, VNA);
                     
 parameter RX_FIFO_SZ = 2048;
@@ -88,6 +88,7 @@ input  wire            clean_dot;        // debounced dot
 input  wire            clean_PTT_in;     // debounced button
 
 input  wire            ADC_OVERLOAD;
+input  wire            ADC2_OVERLOAD;
 
 input  wire      [7:0] Penny_serialno;
 input  wire      [7:0] Merc_serialno;
@@ -248,7 +249,15 @@ begin
       C3_DATA = {4'b0, AIN6[11:8]};
       C4_DATA = AIN6[7:0];
     end
-   
+
+    4:
+    begin
+      C1_DATA = {7'b0, ADC_OVERLOAD};
+      C2_DATA = {7'b0, ADC2_OVERLOAD};
+      C3_DATA = 8'b0;
+      C4_DATA = 8'b0;
+    end
+	 
     default:
     begin
       C1_DATA = 8'b0;
