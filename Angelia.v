@@ -113,6 +113,11 @@
 	15 April 2013  - moved Rx4 to ADC1 and Rx7 to ADC2 until Gigabit ethernet operations can be implemented in order to support 
 						  PowerSDR mRx versions of software better.   
 						- released as v1.6
+	8 May				- reduced the Alex SPI bus speed by half to permit longer ribbon cable connections to Alex, 
+						- assigned unused Rx freqs to the Tx freq,
+						- changed the 1.5MHz HPF filter automatic switchover freq to 1416 KHz and the LPF automatic switchover freqs
+						  to those used in Hermes_v2.4 to accommodate "stitched" mode rx at up to 384 ksps sampling rates,
+						- changed version number to 1.7
 						
 						*** change global clock name **** 
   
@@ -177,7 +182,7 @@ module Angelia(INA, INA_2,
 parameter M_TPD   = 4;
 parameter IF_TPD  = 2;
 
-parameter  Angelia_version = 8'd16;		// Serial number of this version
+parameter  Angelia_version = 8'd17;		// Serial number of this version
 localparam Penny_serialno = 8'd00;		// Use same value as equ1valent Penny code 
 localparam Merc_serialno = 8'd00;		// Use same value as equivalent Mercury code
 
@@ -358,18 +363,18 @@ assign CLRCIN  = CLRCLK;
 assign CLRCOUT = CLRCLK;
 
 
-// Generate C122_cbclk/4 for Alex SPI interface
+// Generate C122_cbclk/8 for Alex SPI interface
 wire      SPI_clk;
-reg       [1:0] spc;
+reg       [2:0] spc;
 
 always @(posedge C122_cbclk)  
 begin
   if (C122_rst)
-    spc <= 2'b00;
-  else  spc <= spc + 2'b01;
+    spc <= 3'b000;
+  else  spc <= spc + 3'b001;
 end
 
-assign SPI_clk = spc[1];
+assign SPI_clk = spc[2];
 
 wire	Apollo_clk;
 wire 	IF_locked;
@@ -2070,23 +2075,36 @@ begin
 				IF_frequency[1] <= {IF_Rx_ctrl_1, IF_Rx_ctrl_2, IF_Rx_ctrl_3, IF_Rx_ctrl_4}; 
 			end
 
-		if (IF_Rx_ctrl_0[7:1] == 7'b0000_011) // decode Rx2 frequency
-       IF_frequency[2] <= {IF_Rx_ctrl_1, IF_Rx_ctrl_2, IF_Rx_ctrl_3, IF_Rx_ctrl_4};  // Rx2 frequency 
+		if (IF_Rx_ctrl_0[7:1] == 7'b0000_011) begin // decode Rx2 frequency
+			if (IF_last_chan >= 3'b001) IF_frequency[2] <= {IF_Rx_ctrl_1, IF_Rx_ctrl_2, IF_Rx_ctrl_3, IF_Rx_ctrl_4};  // Rx2 frequency
+			else IF_frequency[2] <= IF_frequency[0];  
+		end 
 
-		if (IF_Rx_ctrl_0[7:1] == 7'b0000_100) // decode Rx3 frequency
-       IF_frequency[3] <= {IF_Rx_ctrl_1, IF_Rx_ctrl_2, IF_Rx_ctrl_3, IF_Rx_ctrl_4};  // Rx3 frequency 
+		if (IF_Rx_ctrl_0[7:1] == 7'b0000_100) begin // decode Rx3 frequency
+			if (IF_last_chan >= 3'b010) IF_frequency[3] <= {IF_Rx_ctrl_1, IF_Rx_ctrl_2, IF_Rx_ctrl_3, IF_Rx_ctrl_4};  // Rx3 frequency
+			else IF_frequency[3] <= IF_frequency[0];  
+		end 
 
-		 if (IF_Rx_ctrl_0[7:1] == 7'b0000_101) // decode Rx4 frequency
-       IF_frequency[4] <= {IF_Rx_ctrl_1, IF_Rx_ctrl_2, IF_Rx_ctrl_3, IF_Rx_ctrl_4};  // Rx4 frequency 
+		 if (IF_Rx_ctrl_0[7:1] == 7'b0000_101) begin // decode Rx4 frequency
+			if (IF_last_chan >= 3'b011) IF_frequency[4] <= {IF_Rx_ctrl_1, IF_Rx_ctrl_2, IF_Rx_ctrl_3, IF_Rx_ctrl_4};  // Rx4 frequency
+			else IF_frequency[4] <= IF_frequency[0];  
+		end 
 
-		 if (IF_Rx_ctrl_0[7:1] == 7'b0000_110) // decode Rx5 frequency
-       IF_frequency[5] <= {IF_Rx_ctrl_1, IF_Rx_ctrl_2, IF_Rx_ctrl_3, IF_Rx_ctrl_4};  // Rx5 frequency 
+		 if (IF_Rx_ctrl_0[7:1] == 7'b0000_110) begin // decode Rx5 frequency
+			if (IF_last_chan >= 3'b100) IF_frequency[5] <= {IF_Rx_ctrl_1, IF_Rx_ctrl_2, IF_Rx_ctrl_3, IF_Rx_ctrl_4};  // Rx5 frequency
+			else IF_frequency[5] <= IF_frequency[0];  
+		end 
 
-		 if (IF_Rx_ctrl_0[7:1] == 7'b0000_111) // decode Rx6 frequency
-       IF_frequency[6] <= {IF_Rx_ctrl_1, IF_Rx_ctrl_2, IF_Rx_ctrl_3, IF_Rx_ctrl_4};  // Rx6 frequency 
-
-		 if (IF_Rx_ctrl_0[7:1] == 7'b0001_000) // decode Rx7 frequency
-       IF_frequency[7] <= {IF_Rx_ctrl_1, IF_Rx_ctrl_2, IF_Rx_ctrl_3, IF_Rx_ctrl_4};  // Rx7 frequency 
+		 if (IF_Rx_ctrl_0[7:1] == 7'b0000_111) begin // decode Rx6 frequency
+			if (IF_last_chan >= 3'b101) IF_frequency[6] <= {IF_Rx_ctrl_1, IF_Rx_ctrl_2, IF_Rx_ctrl_3, IF_Rx_ctrl_4};  // Rx6 frequency
+			else IF_frequency[6] <= IF_frequency[0];  
+		end
+	
+		 if (IF_Rx_ctrl_0[7:1] == 7'b0001_000) begin // decode Rx7 frequency
+			if (IF_last_chan >= 3'b110) IF_frequency[7] <= {IF_Rx_ctrl_1, IF_Rx_ctrl_2, IF_Rx_ctrl_3, IF_Rx_ctrl_4};  // Rx7 frequency
+			else IF_frequency[7] <= IF_frequency[0];  
+		end 
+	
  end
 end
 
@@ -2284,8 +2302,11 @@ assign C122_Alex_Tx_data = {C122_LPF[6:4], C122_Tx_red_led, C122_TR_relay, C122_
 // define and concatenate the Rx data to send to Alex via SPI
 assign C122_Rx_red_led = FPGA_PTT;	// turn red led on when we Rx
 
-// turn 6m preamp on if frequency > 50MHz 
-assign C122_6m_preamp = (C122_frequency_HZ[0] > 50000000) ? 1'b1 : 1'b0;
+// turn 6m preamp on if any rx frequency > 50MHz and in automatic Alex filter selection mode
+//assign C122_6m_preamp = (C122_frequency_HZ[0] > 50000000) ? 1'b1 : 1'b0;
+wire auto_6m_preamp;
+assign auto_6m_preamp = (C122_freq_max > 50000000) ? 1'b1 : 1'b0;
+assign C122_6m_preamp = Alex_manual ? Alex_6m_preamp : auto_6m_preamp;
 
 // if 6m preamp selected disconnect all filters 
 wire [5:0] C122_HPF;

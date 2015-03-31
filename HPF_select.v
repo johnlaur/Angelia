@@ -47,7 +47,7 @@ output reg   [5:0] HPF;
 
 always @(posedge clock)
 begin
-if 		(frequency <  1500000) HPF <= 6'b100000; 	// bypass
+if 		(frequency <  1416000) HPF <= 6'b100000; 	// bypass
 else if	(frequency <  6500000) HPF <= 6'b010000;	// 1.5MHz HPF	
 else if (frequency <  9500000) HPF <= 6'b001000;	// 6.5MHz HPF
 else if (frequency < 13000000) HPF <= 6'b000100;	// 9.5MHz HPF

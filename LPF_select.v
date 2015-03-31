@@ -49,13 +49,13 @@ output reg   [6:0] LPF;
 		
 always @(posedge clock)  
 begin 
-	if  	(frequency > 29700000) LPF <= 7'b0010000;			// > 10m so use 6m LPF
-	else if (frequency > 21450000) LPF <= 7'b0100000;  	// > 15m so use 12/10m LPF
-	else if (frequency > 14350000) LPF <= 7'b1000000;  	// > 20m so use 17/15m LPF
-	else if (frequency > 7300000)  LPF <= 7'b0000001;  	// > 40m so use 30/20m LPF  
-	else if (frequency > 4000000)  LPF <= 7'b0000010;  	// > 80m so use 60/40m LPF
-	else if (frequency > 2000000)  LPF <= 7'b0000100;  	// > 160m so use 80m LPF  
-	else LPF <= 7'b0001000; 										// < 2MHz so use 160m LPF
+	if  	(frequency > 32000000) LPF <= 7'b0010000;			// > 10m so use 6m LPF
+	else if (frequency > 22000000) LPF <= 7'b0100000;  	// > 15m so use 12/10m LPF
+	else if (frequency > 15000000) LPF <= 7'b1000000;  	// > 20m so use 17/15m LPF
+	else if (frequency > 8000000)  LPF <= 7'b0000001;  	// > 40m so use 30/20m LPF  
+	else if (frequency > 4500000)  LPF <= 7'b0000010;  	// > 80m so use 60/40m LPF
+	else if (frequency > 2400000)  LPF <= 7'b0000100;  	// > 160m so use 80m LPF  
+	else LPF <= 7'b0001000; 										// < 2.4MHz so use 160m LPF
 end 
 
 endmodule

@@ -58,7 +58,7 @@ derive_clock_uncertainty
 #**************************************************************
 create_generated_clock -divide_by 2 -source PHY_RX_CLOCK -name PHY_RX_CLOCK_2  [get_registers {PHY_RX_CLOCK_2}]
 create_generated_clock -name {Angelia_clk_lrclk_gen:clrgen|BCLK} -source [get_ports {LTC2208_122MHz}] -divide_by 40 [get_registers {Angelia_clk_lrclk_gen:clrgen|BCLK}] 
-create_generated_clock -divide_by 4  -source Angelia_clk_lrclk_gen:clrgen|BCLK 	[get_registers {spc[1]}]
+create_generated_clock -divide_by 8  -source Angelia_clk_lrclk_gen:clrgen|BCLK 	[get_registers {spc[2]}]
 
 
 #**************************************************************
@@ -88,7 +88,7 @@ create_generated_clock -divide_by 4  -source Angelia_clk_lrclk_gen:clrgen|BCLK 	
 #**************************************************************
 # Set Clock Groups
 #**************************************************************
-set_clock_groups -asynchronous 	-group {spc[1]} \
+set_clock_groups -asynchronous 	-group {spc[2]} \
 				       {Angelia_clk_lrclk_gen:clrgen|BCLK} \
 				-group {PHY_RX_CLOCK_2} \
 				-group {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]} \
