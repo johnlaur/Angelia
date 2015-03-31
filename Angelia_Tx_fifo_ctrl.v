@@ -8,7 +8,7 @@
 //
 //  HPSDR - High Performance Software Defined Radio
 //
-//  Angelia code. 
+//  Hermes code. 
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 // (C) Phil Harman VK6APH, Kirk Weedman KD7IRS  2006, 2007, 2008, 2009, 2010, 2011, 2012 
-// (C) Joe K5SO 2012
+
 
 
 
@@ -59,7 +59,7 @@
 module Angelia_Tx_fifo_ctrl(IF_reset, IF_clk, Tx_fifo_wdata, Tx_fifo_wreq, Tx_fifo_full, Tx_fifo_used,
                     Tx_fifo_clr, Tx_IQ_mic_rdy,
                     Tx_IQ_mic_data, IF_chan, IF_last_chan, clean_dash, clean_dot, clean_PTT_in, ADC_OVERLOAD,
-                    Penny_serialno, Merc_serialno, Angelia_version, Penny_ALC, AIN1, AIN2, AIN3, 
+                    Penny_serialno, Merc_serialno, Angelia_serialno, Penny_ALC, AIN1, AIN2, AIN3, 
                     AIN4, AIN6, IO4, IO5, IO6, IO8);
                     
 parameter RX_FIFO_SZ = 2048;
@@ -91,7 +91,7 @@ input  wire            ADC_OVERLOAD;
 
 input  wire      [7:0] Penny_serialno;
 input  wire      [7:0] Merc_serialno;
-input  wire      [7:0] Angelia_version;
+input  wire      [7:0] Angelia_serialno;
 
 input  wire     [11:0] Penny_ALC;		// Analog inputs
 input  wire     [11:0] AIN1;
@@ -142,10 +142,7 @@ begin
     1: num_loops = 35; //(512 - 8)bytes/14 - 1 = 35
     2: num_loops = 24; //(512 - 8)bytes/20 - 1 = 24.2
     3: num_loops = 18; //(512 - 8)bytes/26 - 1 = 18.38
-    4: num_loops = 14; 
-    5: num_loops = 12; 
-    6: num_loops = 10; 
-    7: num_loops = 9; 
+        
     default: num_loops = 62;
   endcase
 end
@@ -157,10 +154,7 @@ begin
     1: pad_loops = 0;  
     2: pad_loops = 2;  
     3: pad_loops = 5; 
-    4: pad_loops = 12; 
-    5: pad_loops = 5; 
-    6: pad_loops = 10; 
-    7: pad_loops = 2;     
+    
     default: pad_loops = 0;
   endcase
 end
@@ -217,9 +211,9 @@ begin
     0:
     begin
       C1_DATA = {4'b0,IO8,IO6,IO5,IO4,ADC_OVERLOAD};
-      C2_DATA = Angelia_version; //Merc_serialno;
-      C3_DATA = Angelia_version; //Penny_serialno;
-      C4_DATA = Angelia_version;
+      C2_DATA = Merc_serialno;
+      C3_DATA = Penny_serialno;
+      C4_DATA = Angelia_serialno;
     end
 
     1:

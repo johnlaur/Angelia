@@ -82,6 +82,14 @@
 	               - Released as v0.6
 	18 August		- fixed diversity bug (forced Rx1/Rx2 freq equal when common_Merc_freq asserted)
 						- Released as v0.7
+	3  December    - implemented new FPGA pin assignments for PHY_TX_CLOCK, SRAM, & debug LEDs
+						- fixed bug in the firmware version reporting code
+						- added (Hermes_v2.0) TimeQuest .sdc file to the project for timing contraint definitions
+						- added support for four receivers; odd numbered receivers use ADC 1, even numbered use ADC 2
+						- added improved Alex filter switching support when multiple receivers are in use
+						- added support for Apollo
+						- added support for the 31dB step attenuators (1 dB steps)
+						- Released as v0.8
 	
 	*** change global clock name **** 
   
@@ -146,7 +154,7 @@ module Angelia(INA, INA_2,
 parameter M_TPD   = 4;
 parameter IF_TPD  = 2;
 
-parameter  Angelia_version = 8'd7;		// Serial number of this version
+parameter  Angelia_version = 8'd8;		// Serial number of this version
 localparam Penny_serialno = 8'd00;		// Use same value as equ1valent Penny code 
 localparam Merc_serialno = 8'd00;		// Use same value as equivalent Mercury code
 
@@ -780,7 +788,7 @@ Tx_MAC Tx_MAC_inst (.Tx_clock(Tx_clock), .Tx_clock_2(Tx_clock_2), .IF_rst(IF_rst
 			        .run(run), .IP_valid(IP_valid), .printf(printf), .IP_lease(IP_lease),
 			        .DHCP_MAC(DHCP_MAC), .DHCP_request_renew(DHCP_request_renew),
 			        .erase_done(erase_done), .erase_done_ACK(erase_done_ACK), .send_more(send_more),
-			        .send_more_ACK(send_more_ACK), .Angelia_version(Angleia_version),
+			        .send_more_ACK(send_more_ACK), .Angelia_version(Angelia_version),
 			        .sp_fifo_rddata(sp_fifo_rddata), .sp_fifo_rdreq(sp_fifo_rdreq), 
 			        .sp_fifo_rdused(), .wide_spectrum(wide_spectrum), .have_sp_data(sp_data_ready)
 			        ); 
@@ -919,7 +927,7 @@ assign sp_data_ready = (sp_delay == 0 && have_sp_data);
 
 	
 //--------------------------------------------------------------------------
-//			EPCS16 Erase and Program code 
+//			EPCS64/128 Erase and Program code 
 //--------------------------------------------------------------------------
 
 /*
@@ -1040,13 +1048,28 @@ wire  signed [15:0] C122_Q_PWM;
 cdc_sync #(32)
 	freq0 (.siga(IF_frequency[0]), .rstb(C122_rst), .clkb(C122_clk), .sigb(C122_frequency_HZ_Tx)); // transfer Tx frequency	
 	
-//cdc_sync #(32)
-//	freq1 (.siga(IF_frequency[1]), .rstb(C122_rst), .clkb(C122_clk), .sigb(C122_frequency_HZ[0])); // transfer Rx1 frequency
-//
-//cdc_sync #(32)
-//	freq2 (.siga(IF_frequency[2]), .rstb(C122_rst), .clkb(C122_clk), .sigb(C122_frequency_HZ[1])); // transfer Rx2 frequency
-	
 cdc_sync #(32)
+	freq1 (.siga(IF_frequency[1]), .rstb(C122_rst), .clkb(C122_clk), .sigb(C122_frequency_HZ[0])); // transfer Rx1 frequency
+
+cdc_sync #(32)
+	freq2 (.siga(IF_frequency[2]), .rstb(C122_rst), .clkb(C122_clk), .sigb(C122_frequency_HZ[1])); // transfer Rx2 frequency
+
+cdc_sync #(32)
+	freq3 (.siga(IF_frequency[3]), .rstb(C122_rst), .clkb(C122_clk), .sigb(C122_frequency_HZ[2])); // transfer Rx3 frequency
+
+cdc_sync #(32)
+	freq4 (.siga(IF_frequency[4]), .rstb(C122_rst), .clkb(C122_clk), .sigb(C122_frequency_HZ[3])); // transfer Rx4 frequency
+	
+//cdc_sync #(32)
+//	freq4 (.siga(IF_frequency[5]), .rstb(C122_rst), .clkb(C122_clk), .sigb(C122_frequency_HZ[4])); // transfer Rx5 frequency
+
+//cdc_sync #(32)
+//	freq4 (.siga(IF_frequency[6]), .rstb(C122_rst), .clkb(C122_clk), .sigb(C122_frequency_HZ[3])); // transfer Rx6 frequency
+
+//cdc_sync #(32)
+//	freq4 (.siga(IF_frequency[7]), .rstb(C122_rst), .clkb(C122_clk), .sigb(C122_frequency_HZ[3])); // transfer Rx7 frequency
+
+	cdc_sync #(32)
 	LR_audio (.siga({IF_Left_Data,IF_Right_Data}), .rstb(C122_rst), .clkb(C122_clk), .sigb(C122_LR_data)); // transfer Left and Right audio
 
 cdc_sync #(2)
@@ -1117,7 +1140,7 @@ pulsegen cdc_m   (.sig(IF_CLRCLK), .rst(IF_rst), .clk(IF_clk), .pulse(IF_get_sam
 */
 
 
-localparam NR = 2; // number of receivers to implement
+localparam NR = 4; // number of receivers to implement
 
 reg       [31:0] C122_frequency_HZ [0:NR-1];   // frequency control bits for CORDIC
 reg       [31:0] C122_frequency_HZ_Tx;
@@ -1194,13 +1217,16 @@ generate
 		   .a_rst(C122_rst), .b_rst(IF_rst), .b_data(IF_M_IQ_Data[i]), .b_data_ack(IF_M_IQ_Data_rdy[i]));
 			
 			
-    // transfer Rx frequency	
+/*    // transfer Rx frequency	
     cdc_sync #(32)
     freq (.siga(IF_frequency[i+1]), .rstb(C122_rst), .clkb(C122_clk), .sigb(C122_frequency_HZ[i])); 
+*/
     end
 endgenerate
 
-	 receiver receiver_inst0(
+
+ // receiver 1, uses ADC 1
+ receiver receiver_inst0(
 	   //control
 	   .clock(C122_clk),
 	   .rate({C122_DFS1, C122_DFS0}), //00=48, 01=96, 10=192 kHz
@@ -1213,11 +1239,12 @@ endgenerate
 	   .out_data_Q(rx_Q[0])
 	   );
 
+// receiver 2, uses ADC 2 and Rx 2 phase word
 	 receiver receiver_inst1(
 	   //control
 	   .clock(C122_clk_2),
 	   .rate({C122_DFS1, C122_DFS0}), //00=48, 01=96, 10=192 kHz
-	   .frequency(Rx2_phase_word), //force Rx2 to be same freq as Rx1 when common_Merc_freq is set
+	   .frequency(Rx2_phase_word),
 	   .out_strobe(strobe[1]),		
 	   //input
 	   .in_data(temp_ADC[1]),		
@@ -1226,8 +1253,33 @@ endgenerate
 	   .out_data_Q(rx_Q[1])
 	   );
 
+//receiver 3, uses ADC 1
+	 receiver receiver_inst2(
+	   //control
+	   .clock(C122_clk),
+	   .rate({C122_DFS1, C122_DFS0}), //00=48, 01=96, 10=192 kHz
+	   .frequency(C122_sync_phase_word[2]),
+	   .out_strobe(strobe[2]),		
+	   //input
+	   .in_data(temp_ADC[0]),		
+	   //output
+	   .out_data_I(rx_I[2]),
+	   .out_data_Q(rx_Q[2])
+	   );
 
-
+// receiver 4, uses ADC 2
+	 receiver receiver_inst3(
+	   //control
+	   .clock(C122_clk),
+	   .rate({C122_DFS1, C122_DFS0}), //00=48, 01=96, 10=192 kHz
+	   .frequency(C122_sync_phase_word[3]),
+	   .out_strobe(strobe[3]),		
+	   //input
+	   .in_data(temp_ADC[1]),		
+	   //output
+	   .out_data_I(rx_I[3]),
+	   .out_data_Q(rx_Q[3])
+	   );
 
 
 //---------------------------------------------------------
@@ -1268,12 +1320,12 @@ wire ApolloStatus;
 
 wire FilterSelect;
 
-assign FilterSelect = MODE2;  // high = Alex, low = Apollo.
+assign FilterSelect = IF_Apollo;  // 0 = Alex, 1 = Apollo.
 
-assign SPI_SDO = FilterSelect ? Alex_SPI_SDO : Apollo_SPI_SDO;		// select which module has control of data
-assign SPI_SCK = FilterSelect ? Alex_SPI_SCK : Apollo_SPI_SCK;		// and clock for serial data transfer
-assign J15_5   = FilterSelect ? SPI_RX_LOAD  : ApolloReset;			// Alex Rx_load or Apollo Reset
-assign J15_6   = FilterSelect ? SPI_TX_LOAD  : ApolloEnable;      // Alex Tx_load or Apollo Enable 
+assign SPI_SDO = FilterSelect ? Apollo_SPI_SDO : Alex_SPI_SDO;		// select which module has control of data
+assign SPI_SCK = FilterSelect ? Apollo_SPI_SCK : Alex_SPI_SCK;		// and clock for serial data transfer
+assign J15_5   = FilterSelect ? ApolloReset : SPI_RX_LOAD;			// Alex Rx_load or Apollo Reset
+assign J15_6   = FilterSelect ? ApolloEnable : SPI_TX_LOAD;      // Alex Tx_load or Apollo Enable 
 
 
 reg IF_Filter;
@@ -1299,7 +1351,6 @@ Apollo Apollo_inst(
 	.status(ApolloStatusBytes),					// Status bytes from Apollo.  currently unused.  Some day send some to PC via C&C bytes.
 	.FilterSelect(FilterSelect)
 	);
-	
 				   
 //---------------------------------------------------------
 //                 Transmitter code 
@@ -1367,19 +1418,26 @@ assign C122_out_q = C122_cic_out_q - (C122_cic_out_q >>> 7);
 //    CORDIC NCO 
 //---------------------------------------------------------
 
-// Code rotates input at set frequency and produces I & Q /
+// Code rotates input at set frequency and produces I & Q 
 
 wire signed [14:0] C122_cordic_i_out;
+wire signed [31:0] C122_phase_word_Tx;
 
+wire signed [15:0] I;
+wire signed [15:0] Q;
 
-// **** NOTE:  Tx phase (frequency) set to equal Rx for testing
+// if in VNA mode use the Rx[0] phase word for the Tx
+assign C122_phase_word_Tx = VNA ? C122_sync_phase_word[0] : C122_sync_phase_word_Tx;
+assign                  I = VNA ? 16'd19274 : C122_out_q;   	// select VNA mode if active. Set CORDIC for max DAC output
+assign                  Q = VNA ? 0 : C122_out_i; 					// taking into account CORDICs gain i.e. 0x7FFF/1.7
+
 
 // NOTE:  I and Q inputs reversed to give correct sideband out 
 
 cpl_cordic #(.OUT_WIDTH(16))
- 		cordic_inst (.clock(_122MHz), .frequency(C122_sync_phase_word_Tx), .in_data_I(C122_out_q),
-	    			 .in_data_Q(C122_out_i), .out_data_I(C122_cordic_i_out), .out_data_Q());
- 			 	 
+ 		cordic_inst (.clock(_122MHz), .frequency(C122_phase_word_Tx), .in_data_I(I),			
+		.in_data_Q(Q), .out_data_I(C122_cordic_i_out), .out_data_Q());		
+			 	 
 /* 
   We can use either the I or Q output from the CORDIC directly to drive the DAC.
 
@@ -1745,7 +1803,7 @@ reg         Preamp;					// selects input attenuator setting, 1 = 20dB, 0 = 0dB
 reg   [1:0] IF_TX_relay; 			// Tx relay setting on Alex
 reg         IF_Rout;     			// Rx1 out on Alex
 reg   [1:0] IF_RX_relay; 			// Rx relay setting on Alex 
-reg  [31:0] IF_frequency[0:7]; 	// Tx, Rx1..Rx7
+reg  [31:0] IF_frequency[0:4]; 	// Tx, Rx1, Rx2, Rx3, Rx4
 reg         IF_duplex;
 reg         IF_DFS1;
 reg			IF_DFS0;
@@ -1753,6 +1811,16 @@ reg   [7:0] IF_Drive_Level; 		// Tx drive level
 reg         IF_Mic_boost;			// Mic boost 0 = 0dB, 1 = 20dB
 reg         IF_Line_In;				// Selects input, mic = 0, line = 1
 reg			common_Merc_freq;		// when set forces Rx2 freq to Rx1 freq
+reg   [4:0] IF_Line_In_Gain;		// Sets Line-In Gain value (00000=-32.4 dB to 11111=+12 dB in 1.5 dB steps)
+reg         IF_Apollo;				// Selects Alex (0) or Apollo (1)
+reg 			VNA;						// Selects VNA mode when set. 
+reg		   Alex_manual; 	  		// set if manual selection of Alex relays active
+reg         Alex_6m_preamp; 		// set if manual selection and 6m preamp selected
+reg   [6:0] Alex_manual_LPF;		// Alex LPF relay selection in manual mode
+reg   [5:0] Alex_manual_HPF;		// Alex HPF relay selection in manual mode
+reg   [4:0] Angelia_atten;			// 0-31 dB Heremes attenuator value
+reg			Angelia_atten_enable; // enable/disable bit for Angelia attenuators
+
 
 always @ (posedge IF_clk)
 begin 
@@ -1781,6 +1849,15 @@ begin
 	IF_Filter			<= 1'b0;			// Apollo filter disabled (bypassed)
 	IF_Tuner			<= 1'b0;				// Apollo tuner disabled (bypassed)
 	IF_autoTune			<= 1'b0;			// Apollo auto-tune disabled
+	 IF_Apollo			  <= 1'b0;     //	Alex selected		
+	 VNA					  <= 1'b0;		// VNA disabled
+	 Alex_manual		  <= 1'b0; 	  	// default manual Alex filter selection (0 = auto selection, 1 = manual selection)
+	 Alex_manual_HPF	  <= 6'b0;		// default manual settings, no Alex HPF filters selected
+	 Alex_6m_preamp	  <= 1'b0;		// default not set
+	 Alex_manual_LPF	  <= 7'b0;		// default manual settings, no Alex LPF filters selected
+	 IF_Line_In_Gain	  <= 5'b0;		// default line-in gain at min
+	 Angelia_atten		  <= 5'b0;		// default zero input attenuation
+	 Angelia_atten_enable <= 1'b0;    // default disable Angelia attenuators
 	
   end
   else if (IF_Rx_save) 					// all Rx_control bytes are ready to be saved
@@ -1813,7 +1890,19 @@ begin
 	  IF_Filter			  <= IF_Rx_ctrl_2[2];		// 1 = enable Apollo filter
 	  IF_Tuner			  <= IF_Rx_ctrl_2[3];		// 1 = enable Apollo tuner
 	  IF_autoTune		  <= IF_Rx_ctrl_2[4];		// 1 = begin Apollo auto-tune
+	  IF_Apollo         <= IF_Rx_ctrl_2[5];      // 1 = Apollo enabled, 0 = Alex enabled 
+	  Alex_manual		  <= IF_Rx_ctrl_2[6]; 	  	// manual Alex HPF/LPF filter selection (0 = disable, 1 = enable)
+	  VNA					  <= IF_Rx_ctrl_2[7];		// 1 = enable VNA mode
+	  Alex_manual_HPF	  <= IF_Rx_ctrl_3[5:0];		// Alex HPF filters select
+	  Alex_6m_preamp	  <= IF_Rx_ctrl_3[6];		// 6M low noise amplifier (0 = disable, 1 = enable)
+	  Alex_manual_LPF	  <= IF_Rx_ctrl_4[6:0];		// Alex LPF filters select	  
 	end 
+	if (IF_Rx_ctrl_0[7:1] == 7'b0001_010)
+	begin
+	  IF_Line_In_Gain   <= IF_Rx_ctrl_2[4:0];		// decode line-in gain setting
+	  Angelia_atten      <= IF_Rx_ctrl_4[4:0];    // decode input attenuation setting
+	  Angelia_atten_enable <= IF_Rx_ctrl_4[5];    // decode Angelia attenuators enable/disable
+	end
   end
 end	
 
@@ -1839,33 +1928,17 @@ begin
 				IF_frequency[1] <= IF_frequency[0];				  
          else
 				IF_frequency[1] <= {IF_Rx_ctrl_1, IF_Rx_ctrl_2, IF_Rx_ctrl_3, IF_Rx_ctrl_4}; 
-		end
-		if (IF_Rx_ctrl_0[7:1] == 7'b0000_011) // decode Rx2 frequency
-		begin
-       IF_frequency[2] <= {IF_Rx_ctrl_1, IF_Rx_ctrl_2, IF_Rx_ctrl_3, IF_Rx_ctrl_4};  // Rx2 frequency 
-      end
+			end
 
-		if (IF_Rx_ctrl_0[7:1] == 7'b0000_100) 
-		begin
-       IF_frequency[3] <= {IF_Rx_ctrl_1, IF_Rx_ctrl_2, IF_Rx_ctrl_3, IF_Rx_ctrl_4};  
-      end
-		if (IF_Rx_ctrl_0[7:1] == 7'b0000_101) 
-		begin
-       IF_frequency[4] <= {IF_Rx_ctrl_1, IF_Rx_ctrl_2, IF_Rx_ctrl_3, IF_Rx_ctrl_4};  
-      end
-		if (IF_Rx_ctrl_0[7:1] == 7'b0000_110) 
-		begin
-       IF_frequency[5] <= {IF_Rx_ctrl_1, IF_Rx_ctrl_2, IF_Rx_ctrl_3, IF_Rx_ctrl_4};  
-      end
-		if (IF_Rx_ctrl_0[7:1] == 7'b0000_111) 
-		begin
-       IF_frequency[6] <= {IF_Rx_ctrl_1, IF_Rx_ctrl_2, IF_Rx_ctrl_3, IF_Rx_ctrl_4};  
-      end
-		if (IF_Rx_ctrl_0[7:1] == 7'b0001_000) 
-		begin
-       IF_frequency[7] <= {IF_Rx_ctrl_1, IF_Rx_ctrl_2, IF_Rx_ctrl_3, IF_Rx_ctrl_4};  
-      end
-  end
+		if (IF_Rx_ctrl_0[7:1] == 7'b0000_011) // decode Rx2 frequency
+       IF_frequency[2] <= {IF_Rx_ctrl_1, IF_Rx_ctrl_2, IF_Rx_ctrl_3, IF_Rx_ctrl_4};  // Rx2 frequency 
+
+		if (IF_Rx_ctrl_0[7:1] == 7'b0000_100) // decode Rx3 frequency
+       IF_frequency[3] <= {IF_Rx_ctrl_1, IF_Rx_ctrl_2, IF_Rx_ctrl_3, IF_Rx_ctrl_4};  // Rx3 frequency 
+
+		 if (IF_Rx_ctrl_0[7:1] == 7'b0000_101) // decode Rx4 frequency
+       IF_frequency[4] <= {IF_Rx_ctrl_1, IF_Rx_ctrl_2, IF_Rx_ctrl_3, IF_Rx_ctrl_4};  // Rx4 frequency 
+ end
 end
 
 assign FPGA_PTT = IF_Rx_ctrl_0[0]; // IF_Rx_ctrl_0 only updated when we get correct sync sequence
@@ -1875,13 +1948,13 @@ assign FPGA_PTT = IF_Rx_ctrl_0[0]; // IF_Rx_ctrl_0 only updated when we get corr
 //  Attenuator 
 //------------------------------------------------------------
 
-// for now set the attenuator to 0dB or 20dB
-
+// set the attenuator according to whether Angelia_atten_enable and Preamp bits are set 
 wire [4:0] atten_data;
 
-assign atten_data = Preamp ? 5'b10100 : 5'b0;  // 10100 = 16dB + 4dB = 20dB
+assign atten_data = Angelia_atten_enable ? Angelia_atten : (Preamp ? 5'b0_0000 : 5'b1_0100); 
 
 Attenuator Attenuator_inst (.clk(IF_clk), .data(atten_data), .ATTN_CLK(ATTN_CLK), .ATTN_DATA(ATTN_DATA), .ATTN_LE(ATTN_LE));
+
 
 assign ATTN_CLK_2 = ATTN_CLK;
 assign ATTN_DATA_2 = ATTN_DATA;
@@ -1900,10 +1973,74 @@ assign ATTN_LE_2 = ATTN_LE;
 //////////////////////////////////////////////////////////////
 
 wire  [6:0] C122_LPF;
+wire  [6:0] C122_LPF_auto;
 wire  [5:0] C122_select_HPF;
+wire  [5:0] C122_select_HPF_auto;
+reg   [31:0] C122_freq_max;
+reg	[31:0] C122_freq_min;
+reg   [31:0] C122_HPF_freq;
+reg	[31:0] C122_LPF_freq;
 
-LPF_select Alex_LPF_select(.clock(C122_clk), .frequency(C122_frequency_HZ[0]), .LPF(C122_LPF));
-HPF_select Alex_HPF_select(.clock(C122_clk), .frequency(C122_frequency_HZ[0]), .HPF(C122_select_HPF));
+always @ (posedge C122_clk) begin
+	if (C122_cbrise) begin
+		C122_freq_max <= C122_frequency_HZ[0];
+		C122_freq_min <= C122_frequency_HZ[0];
+
+		// find max freq of the four receiver frequencies
+		if (C122_frequency_HZ[1] >= C122_frequency_HZ[0]) begin 
+			if (C122_frequency_HZ[1] >= C122_frequency_HZ[2]) begin 
+				if (C122_frequency_HZ[1] >= C122_frequency_HZ[3]) C122_freq_max <= C122_frequency_HZ[1];
+				else C122_freq_max <= C122_frequency_HZ[3];
+			end 
+			else begin 
+				if (C122_frequency_HZ[2] >= C122_frequency_HZ[3]) C122_freq_max <= C122_frequency_HZ[2];
+				else C122_freq_max <= C122_frequency_HZ[3];
+			end			
+		end 
+		else begin
+			if (C122_frequency_HZ[2] >= C122_frequency_HZ[0]) begin 
+				if (C122_frequency_HZ[2] >= C122_frequency_HZ[3]) C122_freq_max <= C122_frequency_HZ[2];
+				else C122_freq_max <= C122_frequency_HZ[3];
+			end 
+			else if (C122_frequency_HZ[3] > C122_frequency_HZ[0]) C122_freq_max <= C122_frequency_HZ[3];
+		end 
+		
+		// find min freq of the four receiver frequencies
+		if (C122_frequency_HZ[1] < C122_frequency_HZ[0] && C122_frequency_HZ[1] > 0) begin 
+			if (C122_frequency_HZ[1] < C122_frequency_HZ[2]) begin 
+				if (C122_frequency_HZ[1] < C122_frequency_HZ[3]) C122_freq_min <= C122_frequency_HZ[1];
+				else begin
+					if (C122_frequency_HZ[3] > 0) C122_freq_min <= C122_frequency_HZ[3];
+					else C122_freq_min <= C122_frequency_HZ[1];
+				end
+			end 
+			else begin 
+				if (C122_frequency_HZ[2] < C122_frequency_HZ[3] && C122_frequency_HZ[2] > 0) C122_freq_min <= C122_frequency_HZ[2];
+				else begin
+					if (C122_frequency_HZ[3] > 0) C122_freq_min <= C122_frequency_HZ[3];
+					else if (C122_frequency_HZ[2] > 0) C122_freq_min <= C122_frequency_HZ[2];
+				end
+			end 			
+		end 
+		else begin 
+			if (C122_frequency_HZ[2] < C122_frequency_HZ[0] && C122_frequency_HZ[2] > 0) begin 
+				if (C122_frequency_HZ[2] < C122_frequency_HZ[3]) C122_freq_min <= C122_frequency_HZ[2];
+				else if (C122_frequency_HZ[3] > 0) C122_freq_min <= C122_frequency_HZ[3];
+			end 
+		end 
+
+		C122_HPF_freq <= C122_freq_min;
+		C122_LPF_freq <= FPGA_PTT ? C122_frequency_HZ_Tx : C122_freq_max;
+
+	end
+end
+
+// if Alex_manual selected then use HPF & LPF setting provided by user
+assign C122_LPF 		= Alex_manual ? Alex_manual_LPF : C122_LPF_auto;
+assign C122_select_HPF  = Alex_manual ? Alex_manual_HPF : C122_select_HPF_auto;
+
+LPF_select Alex_LPF_select(.clock(C122_clk), .frequency(C122_LPF_freq), .LPF(C122_LPF_auto));
+HPF_select Alex_HPF_select(.clock(C122_clk), .frequency(C122_HPF_freq), .HPF(C122_select_HPF_auto));
 
 //////////////////////////////////////////////////////////////
 //
@@ -1967,14 +2104,14 @@ wire [15:0] C122_Alex_Rx_data;
 wire C122_10dB_atten = IF_ATTEN[0];
 wire C122_20dB_atten = IF_ATTEN[1];
 
-// define and concatinate the Tx data to send to Alex via SPI
-assign C122_Tx_red_led = ~FPGA_PTT; // turn red led on when we Tx
+// define and concatenate the Tx data to send to Alex via SPI
+assign C122_Tx_red_led = FPGA_PTT; // turn red led on when we Tx
 assign C122_TR_relay   = FPGA_PTT; // turn on TR relay when PTT active
 
 assign C122_Alex_Tx_data = {C122_LPF[6:4], C122_Tx_red_led, C122_TR_relay, C122_ANT3, C122_ANT2,
                        C122_ANT1, C122_LPF[3:0], TX_YELLOW_LED, 3'b000};
 
-// define and concatinate the Rx data to send to Alex via SPI
+// define and concatenate the Rx data to send to Alex via SPI
 assign C122_Rx_red_led = FPGA_PTT;	// turn red led on when we Rx
 
 // turn 6m preamp on if frequency > 50MHz 
@@ -1989,7 +2126,7 @@ assign C122_Alex_Rx_data = {C122_Rx_red_led, C122_10dB_atten, C122_20dB_atten, C
                        C122_Rx_1_out, C122_Rx_1_in, C122_Rx_2_in, C122_Transverter, 1'b0,
                        C122_HPF[4:2], C122_6m_preamp, C122_HPF[1:0], RX_YELLOW_LED};
 					   
-// concatinate Tx and Rx data and send to SPI interface. SPI interface only sends on a change of Alex_data.
+// concatenate Tx and Rx data and send to SPI interface. SPI interface only sends on a change of Alex_data.
 // All data is sent in about 120uS.
 wire [31:0] C122_Alex_data;
 reg  [31:0] SPI_Alex_data;
@@ -2002,6 +2139,7 @@ SPI Alex_SPI_Tx (.Alex_data(C122_Alex_data), .SPI_data(Alex_SPI_SDO),
                  .SPI_clock(Alex_SPI_SCK), .Tx_load_strobe(SPI_TX_LOAD),
                  .Rx_load_strobe(SPI_RX_LOAD), .spi_clock(SPI_clk));	
 
+					  
 //---------------------------------------------------------
 //   State Machine to manage PWM interface
 //---------------------------------------------------------
