@@ -176,6 +176,19 @@
 						- changed version number to V3.2
 	10 May 2014		- fixed bug in iambic.v
 						- changed version number to v3.3
+	27 May 2014		- Added PC control of ADC assignment to the seven receivers 
+							when C0 = 0001_110x, 
+							C1[1:0] = assign ADCn to RX1: 00 = ADC0, 01 = ADC1
+							C1[3:2] = assign ADCn to RX2: 00 = ADC0, 01 = ADC1
+							C1[5:4] = assign ADCn to RX3: 00 = ADC0, 01 = ADC1
+							C1[7:6] = assign ADCn to RX4: 00 = ADC0, 01 = ADC1
+							C2[1:0] = assign ADCn to RX5: 00 = ADC0, 01 = ADC1, except on Tx assign Tx DAC as input to RX5
+							C2[3:2] = assign ADCn to RX6: 00 = ADC0, 01 = ADC1
+							C2[5:4] = assign ADCn to RX7: 00 = ADC0, 01 = ADC1
+							Note: in the case that the ADC control bits are 11, which Orion uses to select
+							ADC3, ADC1 is used instead as ADC3 does not exist on Angelia.  
+						- changed the version number to v3.4
+
 						
 	
 *** change global clock name **** 
@@ -387,7 +400,7 @@ assign  IO1 = 1'b0;  						// low to enable, high to mute
 parameter M_TPD   = 4;
 parameter IF_TPD  = 2;
 
-parameter  Angelia_version = 8'd33;		// Serial number of this version
+parameter  Angelia_version = 8'd34;		// Serial number of this version
 localparam Penny_serialno = 8'd00;		// Use same value as equ1valent Penny code 
 localparam Merc_serialno = 8'd00;		// Use same value as equivalent Mercury code
 
@@ -1322,6 +1335,7 @@ wire      [63:0] C122_ratio_Tx;
 wire      [23:0] rx_I [0:NR-1];
 wire      [23:0] rx_Q [0:NR-1];
 wire             strobe [0:NR-1];
+wire		 [31:0] Rx2_phase_word;
 wire  			  IF_IQ_Data_rdy;
 wire 		 [47:0] IF_IQ_Data;
 wire             test_strobe3;
@@ -1343,11 +1357,12 @@ wire             test_strobe3;
 	end 
 
 localparam M2 = 32'd1172812403;  // B57 = 2^57.   M2 = B57/122880000
-localparam M3 = 32'd16777216;   // M3 = 2^24, used to round the result
+localparam M3 = 32'd16777216; // used in the phase word calc to properly round the result
+
 
 generate
   genvar c;
-  for (c = 0; c < NR; c = c + 1) // calc freq phase word for 4 freqs (Rx1, Rx2, Rx3, Rx4)
+  for (c = 0; c < NR; c = c + 1) // calc freq phase word for 7 freqs (Rx1, Rx2, Rx3, Rx4, Rx5, Rx6, Rx7)
    begin: MDC 
     //  assign C122_ratio[c] = C122_frequency_HZ[c] * M2; // B0 * B57 number = B57 number
 
@@ -1361,27 +1376,39 @@ generate
         C122_last_freq[c] <= C122_frequency_HZ[c];
         if (C122_last_freq[c] != C122_frequency_HZ[c]) // frequency changed)
           C122_sync_phase_word[c] <= C122_ratio[c][56:25]; // B57 -> B32 number since R is always >= 0  
-      end 		
+      end	
     end
+
+//assign phase word for Rx2 depending upon whether common_Merc_freq is asserted
+assign Rx2_phase_word = common_Merc_freq ? C122_sync_phase_word[0] : C122_sync_phase_word[1];
 	 
 	cdc_mcp #(48)			// Transfer the receiver data and strobe from C122_clk to IF_clk
 		IQ_sync (.a_data ({rx_I[c], rx_Q[c]}), .a_clk(C122_clk),.b_clk(IF_clk), .a_data_rdy(strobe[c]),
 				.a_rst(C122_rst), .b_rst(IF_rst), .b_data(IF_M_IQ_Data[c]), .b_data_ack(IF_M_IQ_Data_rdy[c]));
-		
+
   end
 endgenerate
+				
+				// set receiver module input sources
+wire [15:0] select_input_special;
+wire [15:0] select_input_RX[0 : NR-1];
+reg	[1:0] ADC_RX1 = 2'b00;	//default to ADC0 for input
+reg	[1:0] ADC_RX2 = 2'b00;
+reg	[1:0] ADC_RX3 = 2'b00;
+reg	[1:0] ADC_RX4 = 2'b00;
+reg	[1:0] ADC_RX5 = 2'b00;
+reg	[1:0] ADC_RX6 = 2'b00;
+reg	[1:0] ADC_RX7 = 2'b00;
 
-//assign phase word for Rx2 depending upon whether common_Merc_freq is asserted
-wire		 [31:0] Rx2_phase_word;
-assign Rx2_phase_word = common_Merc_freq ? C122_sync_phase_word[0] : C122_sync_phase_word[1];
+assign select_input_RX[0] = (ADC_RX1[0] == 1'b1) ? temp_ADC[1] : temp_ADC[0];
+assign select_input_RX[1] = (ADC_RX2[0] == 1'b1) ? temp_ADC[1] : temp_ADC[0];
+assign select_input_RX[2] = (ADC_RX3[0] == 1'b1) ? temp_ADC[1] : temp_ADC[0];
+assign select_input_RX[3] = (ADC_RX4[0] == 1'b1) ? temp_ADC[1] : temp_ADC[0];
+assign select_input_RX[4] = (ADC_RX5[0] == 1'b1) ? temp_ADC[1] : temp_ADC[0];
+assign select_input_RX[5] = (ADC_RX6[0] == 1'b1) ? temp_ADC[1] : temp_ADC[0];
+assign select_input_RX[6] = (ADC_RX7[0] == 1'b1) ? temp_ADC[1] : temp_ADC[0];
 
-//assign phase word for Rx5 depending upon T/R state
-wire		 [31:0] Rx5_phase_word;
-assign Rx5_phase_word = FPGA_PTT ? C122_sync_phase_word_Tx : C122_sync_phase_word[0];
-
-//assign Rx5 input depending upon T/R state
-wire [15:0] select_input;
-assign select_input = FPGA_PTT ?  temp_DACD : temp_ADC[0];
+assign select_input_special = FPGA_PTT ?  temp_DACD : select_input_RX[4]; //for support of PureSignal
 
 
 receiver receiver_inst0(   // Rx1
@@ -1391,7 +1418,7 @@ receiver receiver_inst0(   // Rx1
 	.frequency(C122_sync_phase_word[0]),
 	.out_strobe(strobe[0]),
 	//input
-	.in_data(temp_ADC[0]),
+	.in_data(select_input_RX[0]),
 	//output
 	.out_data_I(rx_I[0]),
 	.out_data_Q(rx_Q[0]),
@@ -1402,10 +1429,10 @@ receiver receiver_inst1(	// Rx2
 	//control
 	.clock(C122_clk_2),
 	.rate(rate),
-	.frequency(Rx2_phase_word),
+	.frequency(C122_sync_phase_word[1]),
 	.out_strobe(strobe[1]),
 	//input
-	.in_data(temp_ADC[1]),
+	.in_data(select_input_RX[1]),
 	//output
 	.out_data_I(rx_I[1]),
 	.out_data_Q(rx_Q[1]),
@@ -1419,35 +1446,35 @@ receiver receiver_inst2(	// Rx3
 	.frequency(C122_sync_phase_word[2]),
 	.out_strobe(strobe[2]),
 	//input
-	.in_data(temp_ADC[0]),
+	.in_data(select_input_RX[2]),
 	//output
 	.out_data_I(rx_I[2]),
 	.out_data_Q(rx_Q[2]),
 	.test_strobe3()
 	);
 
-receiver2 receiver_inst3(	// Rx4 -uses by2 & by4
+receiver2 receiver_inst3(	// Rx4
 	//control
 	.clock(C122_clk),
 	.rate(rate),
 	.frequency(C122_sync_phase_word[3]),
 	.out_strobe(strobe[3]),
 	//input
-	.in_data(temp_ADC[0]),
+	.in_data(select_input_RX[3]),
 	//output
 	.out_data_I(rx_I[3]),
 	.out_data_Q(rx_Q[3]),
 	.test_strobe3()
 	);
 
-	receiver2 receiver_inst4(	// Rx5 - has DAC data on TX and ADC on Rx
+	receiver2 receiver_inst4(	// Rx5 - has DAC data on TX
 	//control
 	.clock(C122_clk),
 	.rate(rate),
-	.frequency(Rx5_phase_word),
+	.frequency(C122_sync_phase_word_Tx),
 	.out_strobe(strobe[4]),
 	//input
-	.in_data(select_input),
+	.in_data(select_input_special),
 	//output
 	.out_data_I(rx_I[4]),
 	.out_data_Q(rx_Q[4]),
@@ -1456,12 +1483,12 @@ receiver2 receiver_inst3(	// Rx4 -uses by2 & by4
 
 receiver receiver_inst5(   // Rx6
 	//control
-	.clock(C122_clk_2),
+	.clock(C122_clk_3),
 	.rate(rate),
 	.frequency(C122_sync_phase_word[5]),
 	.out_strobe(strobe[5]),
 	//input
-	.in_data(temp_ADC[1]),
+	.in_data(select_input_RX[5]),
 	//output
 	.out_data_I(rx_I[5]),
 	.out_data_Q(rx_Q[5]),
@@ -1470,12 +1497,12 @@ receiver receiver_inst5(   // Rx6
 
 receiver receiver_inst6(   // Rx7
 	//control
-	.clock(C122_clk_2),
+	.clock(C122_clk_3),
 	.rate(rate),
 	.frequency(C122_sync_phase_word[6]),
 	.out_strobe(strobe[6]),
 	//input
-	.in_data(temp_ADC[1]),
+	.in_data(select_input_RX[6]),
 	//output
 	.out_data_I(rx_I[6]),
 	.out_data_Q(rx_Q[6]),
@@ -2173,7 +2200,19 @@ begin
     keyer_weight       <= IF_Rx_ctrl_4[6:0];		// keyer weight 33-66
     keyer_spacing      <= IF_Rx_ctrl_4[7];	   // 0 = off, 1 = on
 	end
-	if (IF_Rx_ctrl_0[7:1] == 7'b0001_111)
+
+ 	if (IF_Rx_ctrl_0[7:1] == 7'b0001_110)
+	begin
+	  ADC_RX1   			<= IF_Rx_ctrl_1[1:0];	// ADC to use for RX1: 00=ADC0, 01=ADC1, 10=ADC2
+	  ADC_RX2   			<= IF_Rx_ctrl_1[3:2];	// ADC to use for RX2: 00=ADC0, 01=ADC1, 10=ADC2
+	  ADC_RX3   			<= IF_Rx_ctrl_1[5:4];	// ADC to use for RX3: 00=ADC0, 01=ADC1, 10=ADC2
+	  ADC_RX4   			<= IF_Rx_ctrl_1[7:6];	// ADC to use for RX4: 00=ADC0, 01=ADC1, 10=ADC2
+	  ADC_RX5   			<= IF_Rx_ctrl_2[1:0];	// ADC to use for RX5: 00=ADC0, 01=ADC1, 10=ADC2
+	  ADC_RX6   			<= IF_Rx_ctrl_2[3:2];	// ADC to use for RX6: 00=ADC0, 01=ADC1, 10=ADC2
+	  ADC_RX7   			<= IF_Rx_ctrl_2[5:4];	// ADC to use for RX7: 00=ADC0, 01=ADC1, 10=ADC2
+	  end
+
+	  if (IF_Rx_ctrl_0[7:1] == 7'b0001_111)
 	begin
 	  internal_CW       <= IF_Rx_ctrl_1[0];		// decode internal CW 0 = off, 1 = on
 	  sidetone_level    <= IF_Rx_ctrl_2;			// decode CW sidetone volume
@@ -2185,10 +2224,7 @@ begin
 		hang[1:0]	 		<= IF_Rx_ctrl_2[1:0];
 		tone_freq [11:4]  <= IF_Rx_ctrl_3;			// decode sidetone frequency, 12 bits
 		tone_freq [3:0]   <= IF_Rx_ctrl_4[3:0];	
-	end	
-	
-	
-	
+	end		
   end
 end	
 
