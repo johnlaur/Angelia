@@ -110,6 +110,9 @@
 						  with Hermes_v2.3 style receiver modules implementing "poly-phase" filters, added higher
 						  sampling rate selections as in Hermes_v2.3
 						- released as v1.5
+	15 April 2013  - moved Rx4 to ADC1 and Rx7 to ADC2 until Gigabit ethernet operations can be implemented in order to support 
+						  PowerSDR mRx versions of software better.   
+						- released as v1.6
 						
 						*** change global clock name **** 
   
@@ -174,7 +177,7 @@ module Angelia(INA, INA_2,
 parameter M_TPD   = 4;
 parameter IF_TPD  = 2;
 
-parameter  Angelia_version = 8'd15;		// Serial number of this version
+parameter  Angelia_version = 8'd16;		// Serial number of this version
 localparam Penny_serialno = 8'd00;		// Use same value as equ1valent Penny code 
 localparam Merc_serialno = 8'd00;		// Use same value as equivalent Mercury code
 
@@ -1123,7 +1126,7 @@ cdc_sync #(32)
 	freq3 (.siga(IF_frequency[3]), .rstb(C122_rst), .clkb(C122_clk), .sigb(C122_frequency_HZ[2])); // transfer Rx3 frequency
 
 cdc_sync #(32)
-	freq4 (.siga(IF_frequency[4]), .rstb(C122_rst), .clkb(C122_clk_2), .sigb(C122_frequency_HZ[3])); // transfer Rx4 frequency
+	freq4 (.siga(IF_frequency[4]), .rstb(C122_rst), .clkb(C122_clk), .sigb(C122_frequency_HZ[3])); // transfer Rx4 frequency
 	
 cdc_sync #(32)
 	freq5 (.siga(IF_frequency[5]), .rstb(C122_rst), .clkb(C122_clk), .sigb(C122_frequency_HZ[4])); // transfer Rx5 frequency
@@ -1132,7 +1135,7 @@ cdc_sync #(32)
 	freq6 (.siga(IF_frequency[6]), .rstb(C122_rst), .clkb(C122_clk_2), .sigb(C122_frequency_HZ[5])); // transfer Rx6 frequency
 
 cdc_sync #(32)
-	freq7 (.siga(IF_frequency[7]), .rstb(C122_rst), .clkb(C122_clk), .sigb(C122_frequency_HZ[6])); // transfer Rx7 frequency
+	freq7 (.siga(IF_frequency[7]), .rstb(C122_rst), .clkb(C122_clk_2), .sigb(C122_frequency_HZ[6])); // transfer Rx7 frequency
 
 
 cdc_sync #(32)
@@ -1349,15 +1352,15 @@ endgenerate
 	   .out_data_Q(rx_Q[2])
 	   );
 
-// receiver 4, uses ADC 2
+// receiver 4, uses ADC 1 until Gigabit ethernet ops are implemented
 	 receiver receiver_inst3(
 	   //control
-	   .clock(C122_clk_2),
+	   .clock(C122_clk),
 	   .rate(sampling_rate),
 	   .frequency(C122_sync_phase_word[3]),
 	   .out_strobe(strobe[3]),		
 	   //input
-	   .in_data(temp_ADC[1]),		
+	   .in_data(temp_ADC[0]),		
 	   //output
 	   .out_data_I(rx_I[3]),
 	   .out_data_Q(rx_Q[3])
@@ -1394,12 +1397,12 @@ endgenerate
 // receiver 7, uses ADC 1
 	 receiver receiver_inst6(
 	   //control
-	   .clock(C122_clk),
+	   .clock(C122_clk_2),
 	   .rate(sampling_rate),
 	   .frequency(C122_sync_phase_word[6]),
 	   .out_strobe(strobe[6]),		
 	   //input
-	   .in_data(temp_ADC[0]),		
+	   .in_data(temp_ADC[1]),		
 	   //output
 	   .out_data_I(rx_I[6]),
 	   .out_data_Q(rx_Q[6])
