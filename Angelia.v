@@ -209,6 +209,12 @@
 						- Fixed Tx spurs and sporadic CW stoppage by changing internal timing
 						- Fixed no REV power reading on Tx
 						- Changed version number to v4.1
+	  18 Aug 2014  - Adjusted timing slightly (less margin on positive slack by 2nSec) on signal paths from sidetone_clock 
+							domain to LTC2208_122MHz domain and increased maximum setup delay by 1 nSec on signal paths from  
+							PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] domain to 
+							PLL_IF_inst|altpll_component|auto_generated|pll1|clk[2] domain in an effort to 
+							cure CW sidetone stopping on some radios after 20 minutes of operation
+						- Changed version number to v4.2
 						
 *** change global clock name **** 
   
@@ -419,7 +425,7 @@ assign  IO1 = 1'b0;  						// low to enable, high to mute
 parameter M_TPD   = 4;
 parameter IF_TPD  = 2;
 
-parameter  Angelia_version = 8'd41;		// Serial number of this version
+parameter  Angelia_version = 8'd42;		// Serial number of this version
 localparam Penny_serialno = 8'd00;		// Use same value as equ1valent Penny code 
 localparam Merc_serialno = 8'd00;		// Use same value as equivalent Mercury code
 

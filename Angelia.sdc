@@ -138,8 +138,8 @@ set_max_delay -from PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2] 
 set_max_delay -from PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] -to Attenuator:Attenuator_ADC1|clk_2 10
 set_max_delay -from PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] -to Attenuator:Attenuator_ADC2|clk_2 3
 set_max_delay -from PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] -to PLL_IF_inst|altpll_component|auto_generated|pll1|clk[1] 7
-# was 11
-set_max_delay -from PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] -to PLL_IF_inst|altpll_component|auto_generated|pll1|clk[2] 112
+# was 112
+set_max_delay -from PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] -to PLL_IF_inst|altpll_component|auto_generated|pll1|clk[2] 113
 set_max_delay -from PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] -to _122MHz 17
 set_max_delay -from PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] -to LTC2208_122MHz_2 5
 set_max_delay -from PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] -to pro_count[2] 11
@@ -158,7 +158,8 @@ set_max_delay -from pro_count[2] -to LTC2208_122MHz 14
 set_max_delay -from pro_count[2] -to Attenuator:Attenuator_ADC1|clk_2 8
 set_max_delay -from pro_count[2] -to Attenuator:Attenuator_ADC2|clk_2 8
 
-set_max_delay -from sidetone:sidetone_inst|sidetone_clock -to LTC2208_122MHz 17
+# was 17
+set_max_delay -from sidetone:sidetone_inst|sidetone_clock -to LTC2208_122MHz 15
 
 set_max_delay -from spc[2] -to _122MHz 31
 
@@ -203,7 +204,7 @@ set_min_delay -from PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] -to 
 #was -9
 set_min_delay -from pro_count[2] -to spc[2] -10
 
-set_min_delay -from sidetone:sidetone_inst|sidetone_clock -to LTC2208_122MHz -6
+set_min_delay -from sidetone:sidetone_inst|sidetone_clock -to LTC2208_122MHz -4
 
 set_min_delay -from virt_122MHz -to PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0] -6
 set_min_delay -from virt_122MHz -to spc[2] -2
