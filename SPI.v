@@ -78,8 +78,9 @@
 
 */
 
-module SPI(Alex_data, SPI_data, SPI_clock, Rx_load_strobe, Tx_load_strobe, spi_clock);
+module SPI(reset, Alex_data, SPI_data, SPI_clock, Rx_load_strobe, Tx_load_strobe, spi_clock);
 
+input wire reset;
 input wire[31:0]Alex_data;
 output reg SPI_data;
 output reg SPI_clock;
@@ -96,13 +97,16 @@ always @ (posedge spi_clock)
 begin
 case (spi_state)
 0:	begin
-		if (Alex_data != previous_Alex_data)begin
+		if (reset | Alex_data != previous_Alex_data)begin
 			data_count <= 31;				// set starting bit count to 31
 			spi_state <= 1;
 		end
 		else spi_state <= 0; 			// wait for Alex data to change
 	end		
 1:	begin
+	if (reset) 
+		SPI_data <= 1'b0;					// set all outputs off if reset
+	else 
 	SPI_data <= Alex_data[data_count];	// set up data to send
 	spi_state <= 2;
 	end

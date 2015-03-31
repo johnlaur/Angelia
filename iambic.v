@@ -89,6 +89,7 @@ Boston, MA  02110-1301, USA.
 	Changes:
 	
 	2014 May 8 	- First release
+	     N0v 14 - Added individual inputs for iambic and keyer_mode
 
 
 */
@@ -96,7 +97,8 @@ Boston, MA  02110-1301, USA.
 module iambic (
 				input clock,					
 				input [5:0] cw_speed,			// 1 to 60 WPM
-				input [1:0] iambic_mode,		// 00 = straight/bug, 01 = Mode A, 10 = Mode B
+				input iambic,						// 0 = straight/bug,  1 = Iambic 
+				input keyer_mode,			      // 0 = Mode A, 1 = Mode B
 				input [7:0] weight, 				// 33 to 66, nominal is 50
 				input letter_space,				// 0 = off, 1 = on
 				input dot_key,						// dot paddle  input, active high
@@ -149,7 +151,7 @@ case (key_state)
 // wait for key press
 LOOP:
 	begin
-		 if(iambic_mode == 2'b00) begin			// Straight/External key or bug
+		 if(!iambic) begin					      // Straight/External key or bug
 			if (dash)									// send manual dashes
 				keyer_out <= 1'b1;
 			else if (dot)								// and automatic dots
@@ -190,7 +192,7 @@ SENDDOT:
 		else delay <= delay  + 1;
 		
 	// if Mode A and both paddels are relesed then clear dash memory
-	if (iambic_mode == 2'b01) begin	
+	if (keyer_mode == 0) begin	
 		if (!dot & !dash)
 				dash_memory <= 0;
 	end	
@@ -211,7 +213,7 @@ SENDDASH:
 		else delay <= delay  + 1;
 		
 	// if Mode A and both padles are relesed then clear dot memory
-	if (iambic_mode == 2'b01 ) begin	
+	if (keyer_mode == 0) begin	
 		if (!dot & !dash)
 				dot_memory <= 0;
 	end
@@ -224,7 +226,7 @@ DOTDELAY:
 	begin
 		if (delay == dot_delay) begin
 			delay <= 0;
-			if(iambic_mode == 2'b00) 					// just return if in bug mode
+			if(!iambic) 									// just return if in bug mode
 				key_state <= LOOP;
 			else if (dash_memory) 						// dash has been set during the dot so service
 				key_state <= PREDASH;

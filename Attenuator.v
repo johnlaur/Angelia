@@ -18,7 +18,7 @@
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
-//  Attenuator - 2011  (C) Phil Harman VK6APH
+//  Attenuator - 2014  (C) Phil Harman VK6APH
 
 //  Driver for Minicircuits DAT-33-SP+ attenuator
 //  C16 set = 16dB, C8 set = 8dB etc
@@ -29,17 +29,17 @@
 /*
 
 
-			   +--+  +--+  +--+  +--+  +--+  +--+  
+			    +--+  +--+  +--+  +--+  +--+  +--+  
 CLK 	    ---+  +--+  +--+  +--+  +--+  +--+  +----
-               >  < 30nS min      
+                >  < 30nS min      
 											   >||< 10nS min
-			+-----+-----+-----+-----+-----+
+			   +-----+-----+-----+-----+-----+
 DATA        | C16 | C8  | C4  | C2  | C1  |
-			+-----+-----+-----+-----+-----+--------------------
+			   +-----+-----+-----+-----+-----+--------------------
 			  MSB                          LSB                                     
-			                                     +--+
+			                                        +--+
 LE          -------------------------------------+  +----------
-											     >  < 30nS min
+											           >  < 30nS min
 
 The register data is latched once LE goes high. 
 
@@ -48,26 +48,21 @@ The register data is latched once LE goes high.
 
 module Attenuator (clk, data, ATTN_CLK, ATTN_DATA, ATTN_LE);
 
-input clk;								// Max of 10MHz 
+input clk;								   // CMCLK - 12.288MHz
 input [4:0]data;		            	// Attenuator setting 
-output reg ATTN_CLK;					// clock to attenuator chip
+output reg ATTN_CLK;					   // clock to attenuator chip - max 10MHz 
 output reg ATTN_DATA;					// data to attenuator chip
 output reg ATTN_LE;						// data latch to attenuator chip]
 
 reg [2:0]bit_count;
 wire [5:0]send_data;
-reg clk_2;
-
-// divide 48MHz IF_clk by 2 to meet 10MHz clock requirements
-always @ (posedge clk)
-	clk_2 <= ~clk_2;
 
 assign send_data = {data, 1'b0};		// append 0 to end of data
 
 reg [3:0] state;
 reg [5:0] previous_data;
 
-always @ (negedge clk_2)
+always @ (negedge clk)
 begin
 
 case (state)

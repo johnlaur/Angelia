@@ -224,7 +224,13 @@
 		16 Jan 2015 - Changed FPGA_PTT to use a de-bounced PTT input with the other inputs.
 						- Changed back to sending Alex data one time on the ALEX SPI bus each time any Alex data changes.
 						- Changed version number to v4.5
-						
+		30 Jan 2015 - Set Alex relays to off at power on.
+						- Merged clocking, CW generataion and I2S audio from new protocol code.
+						- Temp disable Apollo interface.
+						- Changed version number to v4.6
+		1 Feb  2015 - Replaced C122_clk_3 entries with C122_clk (C122_clk_3 is non-existent)	
+	
+	
 *** change global clock name **** 
   
 
@@ -434,7 +440,7 @@ assign  IO1 = 1'b0;  						// low to enable, high to mute
 parameter M_TPD   = 4;
 parameter IF_TPD  = 2;
 
-parameter  Angelia_version = 8'd45;		// Serial number of this version
+parameter  Angelia_version = 8'd46;		// Serial number of this version
 localparam Penny_serialno = 8'd00;		// Use same value as equ1valent Penny code 
 localparam Merc_serialno = 8'd00;		// Use same value as equivalent Mercury code
 
@@ -461,7 +467,7 @@ cdc_sync #(1)
 	reset_C122 (.siga(IF_rst), .rstb(IF_rst), .clkb(C122_clk), .sigb(C122_rst)); // 122.88MHz clock domain reset
 	
 cdc_sync #(1)
-	reset_Alex (.siga(IF_rst), .rstb(IF_rst), .clkb(SPI_clk), .sigb(SPI_Alex_rst));  // SPI_clk domain reset
+	reset_Alex (.siga(IF_rst), .rstb(IF_rst), .clkb(CBCLK), .sigb(SPI_Alex_rst));  // SPI_clk domain reset
 	
 //---------------------------------------------------------
 //		CLOCKS
@@ -471,40 +477,18 @@ wire C122_clk = LTC2208_122MHz;
 wire C122_clk_2 = LTC2208_122MHz_2;
 wire IF_clk;
 wire CLRCLK;
-
-wire C122_cbclk, C122_cbrise, C122_cbfall;
-Angelia_clk_lrclk_gen clrgen (.reset(C122_rst), .CLK_IN(C122_clk), .BCLK(C122_cbclk),
-                             .Brise(C122_cbrise), .Bfall(C122_cbfall), .LRCLK(CLRCLK));
-
-assign CBCLK   = C122_cbclk;
 assign CLRCIN  = CLRCLK;
 assign CLRCOUT = CLRCLK;
 
-
-// Generate C122_cbclk/8 for Alex SPI interface
-wire      SPI_clk;
-reg       [2:0] spc;
-
-always @(posedge C122_cbclk)  
-begin
-  if (C122_rst)
-    spc <= 3'b000;
-  else  spc <= spc + 3'b001;
-end
-
-assign SPI_clk = spc[2]; // yields a 100KHz clock on the SPI bus
-
 wire	Apollo_clk;
 wire 	IF_locked;
-wire pro_clock_8;
-wire pro_clock;	
-reg [2:0] pro_count = 0;
-// Generate IF_clk (48MHz), CMCKL (12.288MHz) and Apollo_clk(30kHz) from 122.88MHz using PLL 
-PLL_IF PLL_IF_inst (.inclk0(C122_clk), .c0(IF_clk), .c1(CMCLK), .c2(Apollo_clk),  .c3(pro_clock_8), .locked(IF_locked));
-// // CW profile clock, divide pro_clock_8 by 8
-always @ (posedge pro_clock_8)
-		pro_count <= pro_count + 3'd1;
-assign pro_clock = pro_count[2];	
+wire  C122_cbrise;
+
+// Generate IF_clk (48MHz), CMCLK (12.288MHz), CBCLK(3.072MHz) and CLRCLK (48kHz) from 122.88MHz using PLL
+// NOTE: CBCLK is generated at 180 degress so that LRCLK occurs on negative edge of BCLK 
+PLL_IF PLL_IF_inst (.inclk0(C122_clk), .c0(IF_clk), .c1(CMCLK), .c2(CBCLK),  .c3(CLRCLK), .locked(IF_locked));
+
+pulsegen pulse  (.sig(CBCLK), .rst(IF_rst), .clk(!CMCLK), .pulse(C122_cbrise));  // pulse on rising edge of BCLK for Rx/Tx frequency calculations
 
 //----------------------------PHY Clocks-------------------
 
@@ -1163,16 +1147,18 @@ ASMI_interface  ASMI_int_inst(.clock(Tx_clock), .busy(busy), .erase(erase), .era
 //--------------------------------------------------------------------------------------------
 //  	Iambic CW Keyer
 //--------------------------------------------------------------------------------------------
-// parameter is clock speed in kHz. Keyer data from PC is sent in I channel when in FPGA CW mode. 
+
 wire keyout;
 wire dot, dash, CWX;
+reg iambic;					// 0 = straight key/bug mode, 1 = iambic CW keyer mode
+reg keyer_mode;			// 0 = iambic CW keyer mode A, 1 = iamic CW keyer mode B
 
 assign dot  = (IF_I_PWM[2] & internal_CW);
 assign dash = (IF_I_PWM[1] & internal_CW);
 assign  CWX = (IF_I_PWM[0] & internal_CW);
+// parameter is clock speed in kHz.
 
-
-iambic #(30) iambic_inst (.clock(Apollo_clk), .cw_speed(keyer_speed),  .iambic_mode(keyer_mode), .weight(keyer_weight), 
+iambic #(48) iambic_inst (.clock(CLRCLK), .cw_speed(keyer_speed), .iambic(iambic), .keyer_mode(keyer_mode), .weight(keyer_weight), 
                           .letter_space(keyer_spacing), .dot_key(!KEY_DOT | dot), .dash_key(!KEY_DASH | dash),
 								  .CWX(CWX), .paddle_swap(key_reverse), .keyer_out(keyout));
 						  
@@ -1185,49 +1171,40 @@ assign CW_char = (keyout & internal_CW & run);		// set if running, internal_CW i
 wire [15:0] CW_RF;
 wire [15:0] profile;
 wire CW_PTT;
-profile profile_sidetone (.clock(pro_clock), .CW_char(CW_char), .profile(profile),  .delay(8'd0));
-profile profile_CW       (.clock(pro_clock), .CW_char(CW_char), .profile(CW_RF),    .delay(RF_delay), .hang(hang), .PTT(CW_PTT));
+profile profile_sidetone (.clock(CLRCLK), .CW_char(CW_char), .profile(profile),  .delay(8'd0));
+profile profile_CW       (.clock(CLRCLK), .CW_char(CW_char), .profile(CW_RF),    .delay(RF_delay), .hang(hang), .PTT(CW_PTT));
 
 //--------------------------------------------------------
 //			Generate CW sidetone with raised cosine profile
 //--------------------------------------------------------	
-wire signed [15:0] C122_sidetone;
-sidetone sidetone_inst( .clock(C122_clk), .tone_freq(tone_freq), .sidetone_level(sidetone_level), .CW_PTT(CW_PTT),
-                        .C122_sidetone(C122_sidetone),  .profile(profile));					
+wire signed [15:0] prof_sidetone;
+sidetone sidetone_inst( .clock(CLRCLK), .enable(internal_CW), .tone_freq(tone_freq), .sidetone_level(sidetone_level), .CW_PTT(CW_PTT),
+                        .prof_sidetone(prof_sidetone),  .profile(profile));
 // select sidetone  when CW key active and sidetone_level is not zero else Rx audio.
 wire [31:0] Rx_audio;
-assign Rx_audio = CW_PTT && (sidetone_level != 0) ? {C122_sidetone, C122_sidetone}  : C122_LR_data; 
+assign Rx_audio = CW_PTT && (sidetone_level != 0) ? {prof_sidetone, prof_sidetone}  : {IF_Left_Data,IF_Right_Data}; 
 
 //---------------------------------------------------------
 //		Send L/R audio to TLV320 in I2S format
 //---------------------------------------------------------
              
-I2S_xmit #(.DATA_BITS(32))  // CLRCLK running at 48KHz
-  LR (.rst(C122_rst), .lrclk(CLRCLK), .clk(C122_clk), .CBrise(C122_cbrise),
-		.CBfall(C122_cbfall), .sample(Rx_audio), .outbit(CDIN));
+// send receiver audio to TLV320 in I2S format
+audio_I2S audio_I2S_inst (.BCLK(CBCLK), .empty(), .LRCLK(CLRCLK), .data_in(Rx_audio), .data_out(CDIN), .get_data()); 	
 
       
 //----------------------------------------------------------------------------
 //		Get mic data from  TLV320 in I2S format and transfer to IF_clk domain
 //---------------------------------------------------------------------------- 
 
-wire [31:0] C122_mic_LR;
-wire        C122_mic_rdy;
-reg  [15:0] C122_mic_data;
+wire [15:0] mic_data;
       
-// Get I2S CDOUT mic data from TLV320.  NOTE: only 16 bits used
-I2S_rcv #(32,2,1) // WARNING: values 2,1 may need adjusting for best capture of data
-    MIC (.xrst(C122_rst), .xclk(C122_clk), .BCLK(CBCLK), .LRCLK(CLRCLK), .din(CDOUT),.xData(C122_mic_LR),.xData_rdy(C122_mic_rdy));
+mic_I2S mic_I2S_inst (.clock(CBCLK), .CLRCLK(CLRCLK), .in(CDOUT), .mic_data(mic_data), .ready());
     
-always @(posedge C122_clk)
-begin
-  if (C122_mic_rdy) // this happens before LRfall
-    C122_mic_data <= C122_mic_LR[31:16]; // we're only using the Left data
-end
+
     
 // transfer mic data into the IF_clk domain
 cdc_sync #(16)
-	cdc_mic (.siga(C122_mic_data), .rstb(IF_rst), .clkb(IF_clk), .sigb(IF_mic_Data)); 
+	cdc_mic (.siga(mic_data), .rstb(IF_rst), .clkb(IF_clk), .sigb(IF_mic_Data)); 
 
 //---------------------------------------------------------
 //		De-ramdomizer
@@ -1268,7 +1245,6 @@ end
 
 // cdc_sync is used to transfer from a slow to a fast clock domain
 
-wire  [31:0] C122_LR_data;
 wire  C122_DFS0, C122_DFS1;
 wire  C122_rst;
 wire  signed [15:0] C122_I_PWM;
@@ -1297,9 +1273,6 @@ cdc_sync #(32)
 
 cdc_sync #(32)
 	freq7 (.siga(IF_frequency[7]), .rstb(C122_rst), .clkb(C122_clk_2), .sigb(C122_frequency_HZ[6])); // transfer Rx7 frequency
-
-cdc_sync #(32)
-	LR_audio (.siga({IF_Left_Data,IF_Right_Data}), .rstb(C122_rst), .clkb(C122_clk), .sigb(C122_LR_data)); // transfer Left and Right audio
 
 cdc_sync #(2)
 	rates (.siga({IF_DFS1,IF_DFS0}), .rstb(C122_rst), .clkb(C122_clk), .sigb({C122_DFS1, C122_DFS0})); // sample rate
@@ -1517,7 +1490,7 @@ receiver2 receiver_inst3(	// Rx4
 
 receiver receiver_inst5(   // Rx6
 	//control
-	.clock(C122_clk_3),
+	.clock(C122_clk),
 	.rate(rate),
 	.frequency(C122_sync_phase_word[5]),
 	.out_strobe(strobe[5]),
@@ -1531,7 +1504,7 @@ receiver receiver_inst5(   // Rx6
 
 receiver receiver_inst6(   // Rx7
 	//control
-	.clock(C122_clk_3),
+	.clock(C122_clk),
 	.rate(rate),
 	.frequency(C122_sync_phase_word[6]),
 	.out_strobe(strobe[6]),
@@ -1612,26 +1585,26 @@ reg IF_Filter;
 reg IF_Tuner;
 reg IF_autoTune;
 
-Apollo Apollo_inst(
-	.reset(IF_rst),
-	.clock(Apollo_clk),
-	.frequency(IF_frequency[0]),	
-	.timeout(timeout),
-	.PTT(FPGA_PTT),
-	.Filter(1'b1),  // Filter(IF_Filter),
-	.Tuner(IF_Tuner),
-	.ANT_TUNE(IF_autoTune),
-	.SPI_SDI(SPI_SDI),							// serial data from Apollo - currently not used 
-	.SPI_SDO(Apollo_SPI_SDO),					// serial data to Apollo
-	.SPI_SCK(Apollo_SPI_SCK),					// clock for Apollo serial data transfer
-	//.ApolloStatusLine(ApolloStatus),			// Apollo sets this low when it wants to send data
-	.ApolloStatusLine(0),			// Apollo sets this low when it wants to send data
-	.ApolloReset(ApolloReset),
-	//.ApolloEnable(ApolloEnable),
-	.statusAvailable(ApolloStatusAvailable),	// set true when ApolloStatusBytes have been updated
-	.status(ApolloStatusBytes),					// Status bytes from Apollo.  currently unused.  Some day send some to PC via C&C bytes.
-	.FilterSelect(FilterSelect)
-	);
+//Apollo Apollo_inst(
+//	.reset(IF_rst),
+//	.clock(Apollo_clk),
+//	.frequency(IF_frequency[0]),	
+//	.timeout(timeout),
+//	.PTT(FPGA_PTT),
+//	.Filter(1'b1),  // Filter(IF_Filter),
+//	.Tuner(IF_Tuner),
+//	.ANT_TUNE(IF_autoTune),
+//	.SPI_SDI(SPI_SDI),							// serial data from Apollo - currently not used 
+//	.SPI_SDO(Apollo_SPI_SDO),					// serial data to Apollo
+//	.SPI_SCK(Apollo_SPI_SCK),					// clock for Apollo serial data transfer
+//	//.ApolloStatusLine(ApolloStatus),			// Apollo sets this low when it wants to send data
+//	.ApolloStatusLine(0),			// Apollo sets this low when it wants to send data
+//	.ApolloReset(ApolloReset),
+//	//.ApolloEnable(ApolloEnable),
+//	.statusAvailable(ApolloStatusAvailable),	// set true when ApolloStatusBytes have been updated
+//	.status(ApolloStatusBytes),					// Status bytes from Apollo.  currently unused.  Some day send some to PC via C&C bytes.
+//	.FilterSelect(FilterSelect)
+//	);
 	
 				   
 //---------------------------------------------------------
@@ -2125,7 +2098,7 @@ reg   [9:0] hang;						// 0 - 1000, sets delay in mS from release of CW Key to d
 reg  [11:0] tone_freq;				// 200 to 2250 Hz, sets sidetone frequency.
 reg         key_reverse;		   // reverse CW keyes if set
 reg   [5:0] keyer_speed; 			// CW keyer speed 0-60 WPM
-reg   [1:0] keyer_mode;				// 00 = straight/external/bug, 01 = Mode A, 10 = Mode B
+reg   [1:0] keyer_mode_in;			// 00 = straight/external/bug, 01 = Mode A, 10 = Mode B
 reg   [7:0] keyer_weight;			// keyer weight 33-66
 reg         keyer_spacing;			// 0 = off, 1 = on
 reg   [4:0] atten_on_Tx;			// Rx attenuation value to use when Tx is active
@@ -2175,7 +2148,7 @@ begin
 	 tone_freq  		  <= 12'b0;		// default sidetone frequency
     key_reverse		  <= 1'b0;     // reverse CW keyes if set
     keyer_speed        <= 6'b0; 		// CW keyer speed 0-60 WPM
-    keyer_mode         <= 2'b0;	   // 00 = straight/external/bug, 01 = Mode A, 10 = Mode B
+    keyer_mode_in      <= 2'b0;	   // 00 = straight/external/bug, 01 = Mode A, 10 = Mode B
     keyer_weight       <= 8'b0;		// keyer weight 33-66
     keyer_spacing      <= 1'b0;	   // 0 = off, 1 = on
 	 atten_on_Tx		  <= 5'b11111; // default Rx attenuation value to use when Tx is active	
@@ -2230,8 +2203,12 @@ begin
 	 atten2_enable 	   <= IF_Rx_ctrl_1[5];		// input attenuator 2 enable/disable (0=disabled, 1= enabled)
 	 key_reverse		  <= IF_Rx_ctrl_2[6];     	// reverse CW keyes if set
     keyer_speed        <= IF_Rx_ctrl_3[5:0];  	// CW keyer speed 0-60 WPM
-    keyer_mode         <= IF_Rx_ctrl_3[7:6];	   // 00 = straight/external/bug, 01 = Mode A, 10 = Mode B
-    keyer_weight       <= IF_Rx_ctrl_4[6:0];		// keyer weight 33-66
+    keyer_mode_in         <= IF_Rx_ctrl_3[7:6];	   // 00 = straight/external/bug, 01 = Mode A, 10 = Mode B
+    if (keyer_mode_in == 2'b00) iambic <= 1'b0; // straight key/bug CW mode
+	 else iambic <= 1'b1;								// iambic CW keyer mode
+	 if (keyer_mode_in == 2'b01) keyer_mode <= 1'b0; // iambic CW keyer mode A
+	 if (keyer_mode_in == 2'b10) keyer_mode <= 1'b1; // iambic CW keyer mode B
+	 keyer_weight       <= IF_Rx_ctrl_4[6:0];		// keyer weight 33-66
     keyer_spacing      <= IF_Rx_ctrl_4[7];	   // 0 = off, 1 = on
 	end
 
@@ -2344,8 +2321,8 @@ assign atten2_data_in = atten2_enable ? Angelia_atten2 : 5'b0_0000;
 assign attenuator1 = FPGA_PTT ? atten_on_Tx : atten_data_in;
 assign attenuator2 = FPGA_PTT ? atten_on_Tx : atten2_data_in;
 	
-Attenuator Attenuator_ADC1 (.clk(IF_clk), .data(attenuator1), .ATTN_CLK(ATTN_CLK), .ATTN_DATA(ATTN_DATA), .ATTN_LE(ATTN_LE));
-Attenuator Attenuator_ADC2 (.clk(IF_clk), .data(attenuator2), .ATTN_CLK(ATTN_CLK_2), .ATTN_DATA(ATTN_DATA_2), .ATTN_LE(ATTN_LE_2));
+Attenuator Attenuator_ADC1 (.clk(CMCLK), .data(attenuator1), .ATTN_CLK(ATTN_CLK), .ATTN_DATA(ATTN_DATA), .ATTN_LE(ATTN_LE));
+Attenuator Attenuator_ADC2 (.clk(CMCLK), .data(attenuator2), .ATTN_CLK(ATTN_CLK_2), .ATTN_DATA(ATTN_DATA_2), .ATTN_LE(ATTN_LE_2));
 
 
 //////////////////////////////////////////////////////////////
@@ -2512,35 +2489,6 @@ wire C122_20dB_atten = IF_ATTEN[1];
 
 // define and concatenate the Tx data to send to Alex via SPI
 assign C122_Tx_red_led = FPGA_PTT; // turn red led on when we Tx                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 assign C122_TR_relay   = (TR_relay_disable) ? 1'b0 : FPGA_PTT; // turn on TR relay when PTT active unless disabled
 
 assign C122_Alex_Tx_data = {C122_LPF[6:4], C122_Tx_red_led, C122_TR_relay, C122_ANT3, C122_ANT2,
@@ -2573,11 +2521,11 @@ assign C122_Alex_data = {C122_Alex_Tx_data[15:0], C122_Alex_Rx_data[15:0]};
 
 // move Alex data into SPI_clk domain 
 cdc_sync #(32)
-	SPI_Alex (.siga(C122_Alex_data), .rstb(SPI_Alex_rst), .clkb(SPI_clk), .sigb(SPI_Alex_data));
+	SPI_Alex (.siga(C122_Alex_data), .rstb(SPI_Alex_rst), .clkb(CBCLK), .sigb(SPI_Alex_data));
 
-SPI Alex_SPI_Tx (.Alex_data(SPI_Alex_data), .SPI_data(Alex_SPI_SDO),
+SPI Alex_SPI_Tx (.reset(SPI_Alex_rst),.Alex_data(SPI_Alex_data), .SPI_data(Alex_SPI_SDO),
                  .SPI_clock(Alex_SPI_SCK), .Tx_load_strobe(SPI_TX_LOAD),
-                 .Rx_load_strobe(SPI_RX_LOAD), .spi_clock(SPI_clk));	
+                 .Rx_load_strobe(SPI_RX_LOAD), .spi_clock(CBCLK));	
 
 //---------------------------------------------------------
 //   State Machine to manage PWM interface

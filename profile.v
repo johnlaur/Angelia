@@ -21,10 +21,10 @@
 //  Profile - 2014  (C) Phil Harman VK6PH
 
 
-// Raised cosine will be applied over 5mS. Profile consists of 1000 samples and is read from ROM.
+// Raised cosine will be applied over 5mS. Profile consists of 240 samples and is read from ROM.
 // ROM address is read forwards for key press and backwards for key release.
-// Clock is at 192kHz which is an integer multiple of 48kHz so we don't cross clock domains. 
-// profile_ROM holds the profile values. Values are in profile.mif.
+// Clock is at 48kHz, profile_ROM holds the profile values. Values are in profile.mif.
+// Since we require the profile to be applied over 5mS we need 48 * 5 = 240 clocks and hence samples.
 // For reverse read we need to keep the CW note and carrier operating - use PTT to do this.
 // The max value of the profile has been slected to give the maximum output of the RF DAC taking into account
 // the CORDIC gain. 
@@ -39,7 +39,7 @@
 
 
 module profile (
-	input clock,								// 192kHz clock from PLL
+	input clock,								// 48kHz clock from PLL
 	input CW_char,								// active when dot or dash key pressed
 	input [7:0]delay,							// delay creation of profile for these mS
 	input [9:0]hang,							// keep PTT active at end of character for these mS
@@ -49,11 +49,10 @@ module profile (
 	
 profile_ROM	profile_ROM_inst (.address (profile_count),.clock (clock), .q(profile));
 
-
 reg  [3:0]prof_state;
-reg  [9:0]profile_count;
-reg  [17:0] timer = 0;						// Holds start. Each clock = 5.2uS hence 192 clocks = 1mS
-reg  char_PTT = 0;							// Max delay = 1023mS so need 192 * 1023 ~= 200,000 = 2^18 counts. 
+reg  [7:0]profile_count;
+reg  [15:0] timer = 0;						// Holds start. Each clock = 20.83uS hence 48 clocks = 1mS
+reg  char_PTT = 0;							// Max delay = 1023mS so need 48 * 1023 ~= 50,000 = 2^16 counts. 
 reg  enable_hang = 0;
 
 
@@ -75,16 +74,16 @@ case (prof_state)
 		end
 		
 1: begin										// delay for set mS
-		if (timer == (delay * 192))begin
+		if (timer == (delay * 48))begin
 			timer <= 0;
 			prof_state <= 2;
 		end 
-		else timer = timer + 18'd1;
+		else timer <= timer + 16'd1;
 	end 
 
 2:	begin
-		if (profile_count != 999) begin
-			profile_count <= profile_count + 1'b1;
+		if (profile_count != 239) begin
+			profile_count <= profile_count + 8'd1;
 		end
 		else begin
 			if (!CW_char) 	begin 				// stay in this state until key is released
@@ -96,16 +95,16 @@ case (prof_state)
 	end
 	
 3: begin
-		if (timer == (delay * 192))begin  // extend element by delay time 
+		if (timer == (delay * 48))begin  // extend element by delay time 
 			timer <= 0;
 			prof_state <= 4;
 		end 
-		else timer = timer + 18'd1;
+		else timer = timer + 16'd1;
 	end
 	
 4: begin	
 		if (profile_count != 0) 						// ROM address counter runs backwards
-			profile_count <= profile_count - 1'b1;
+			profile_count <= profile_count - 8'd1;
 		else begin
 			if (hang != 0 )	enable_hang <= 1'b1;
 			prof_state <= 0;
@@ -118,7 +117,7 @@ end
 
 reg hang_PTT = 0;
 reg hang_state = 0;
-reg [17:0] hang_timer = 0;
+reg [15:0] hang_timer = 0;
 
 // use separate code for hang so we can monitor key closures during this period 
 always @ (negedge clock)
@@ -137,9 +136,9 @@ case (hang_state)
 
 1: begin 
 		if (char_PTT) hang_timer <= 0;    // keep resetting timer whilst key is active
-		else if (hang_timer == (hang * 192))		
+		else if (hang_timer == (hang * 48))		
 			hang_state <= 0;
-		else hang_timer <= hang_timer + 18'd1;
+		else hang_timer <= hang_timer + 16'd1;
 	end
 	
 default hang_state <= 0;
