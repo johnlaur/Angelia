@@ -24,8 +24,8 @@
 //  along with this program; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-// (C) Phil Harman VK6APH, Kirk Weedman KD7IRS  2006, 2007, 2008, 2009, 2010, 2011, 2012 
-// (C) Joe Martin K5SO 2012
+// Copyright(C) Phil Harman VK6APH, Kirk Weedman KD7IRS  2006, 2007, 2008, 2009, 2010, 2011, 2012 
+// Copyright(C) Joe Martin K5SO 2012, 2013
 
 
 
@@ -106,6 +106,10 @@
 						- released as v1.3. Compiled with Quartus V12.1
 	8 January 2013 - fixed ethernet ARP response bug
 						- released as v1.4
+	7 April 2013	- added new ARP code and ethernet comm code/modules as in Hermes_v2.3, replaced receiver modules
+						  with Hermes_v2.3 style receiver modules implementing "poly-phase" filters, added higher
+						  sampling rate selections as in Hermes_v2.3
+						- released as v1.5
 						
 						*** change global clock name **** 
   
@@ -170,7 +174,7 @@ module Angelia(INA, INA_2,
 parameter M_TPD   = 4;
 parameter IF_TPD  = 2;
 
-parameter  Angelia_version = 8'd14;		// Serial number of this version
+parameter  Angelia_version = 8'd15;		// Serial number of this version
 localparam Penny_serialno = 8'd00;		// Use same value as equ1valent Penny code 
 localparam Merc_serialno = 8'd00;		// Use same value as equivalent Mercury code
 
@@ -285,7 +289,6 @@ input	wire 	 CLK_25MHZ;						// 25MHz clock
 // Filters or PA select via J13
 input wire MODE2;								// high with jumper off J13, filter select, high => use Alex, low => use Apollo
 
-
 assign RAND = IF_RAND;
 assign RAND_2 = IF_RAND;
 assign PGA = 0;								// 1 = gain of 3dB, 0 = gain of 0dB
@@ -314,6 +317,8 @@ assign USEROUT3 = IF_OC[3];
 assign USEROUT4 = IF_OC[4];
 assign USEROUT5 = IF_OC[5];
 assign USEROUT6 = IF_OC[6];
+
+assign NCONFIG = IP_write_done || reset_FPGA;
 
 // enable AF Amp
 assign  IO1 = 1'b0;  						// low to enable, high to mute
@@ -446,6 +451,7 @@ reg [2:0]DHCP_retries;		// DHCP retry counter
 reg IP_valid;					// set when Metis has a valid IP address assigned by DHCP or APIPA
 reg Assigned_IP_valid;		// set if IP address assigned by PC is not 0.0.0.0. or 255.255.255.255
 reg use_IPIPA;					// set when no DHCP or assigned IP available so use APIAP
+reg read_IP_address;			// set when we wish to read IP address from EEPROM
 
 always @ (posedge Tx_clock_2)
 begin
@@ -564,10 +570,12 @@ end
 //----------------------------------------------------------------------------------
 // read and write to the EEPROM	(NOTE: Max clock frequency is 20MHz)
 //----------------------------------------------------------------------------------
-EEPROM EEPROM_inst(.clock(EEPROM_clock), .read_MAC(read_MAC), .read_IP(read_IP || read_IP_address), .write_IP(write_IP), 
+wire IP_ready;
+wire write_IP;
+				
+EEPROM EEPROM_inst(.clock(EEPROM_clock), .read_MAC(read_MAC), .read_IP(read_IP_address), .write_IP(write_IP), 
 				   .IP_to_write(IP_to_write), .CS(CS), .SCK(SCK), .SI(SI), .SO(SO), .This_MAC(This_MAC),
 				   .This_IP(AssignIP), .MAC_ready(MAC_ready), .IP_ready(IP_ready), .IP_write_done(IP_write_done));				
-					
 					
 								
 //------------------------------------------------------------------------------------
@@ -742,7 +750,7 @@ wire [47:0]ARP_PC_MAC; 			// MAC address of PC requesting ARP
 wire [31:0]ARP_PC_IP;			// IP address of PC requesting ARP
 wire [47:0]Ping_PC_MAC; 		// MAC address of PC requesting ping
 wire [31:0]Ping_PC_IP;			// IP address of PC requesting ping
-wire [47:0]IP_PC_MAC;         // IP address of PC requesting/setting IP address
+//wire [47:0]IP_PC_MAC;         // IP address of PC requesting/setting IP address
 wire [15:0]Length;				// Lenght of frame - used by ping
 wire data_match;					// for debug use 
 wire PHY_100T_state;				// used as system clock at 100T
@@ -758,13 +766,13 @@ wire erase_ACK;					// set when ASMI interface acks the erase command
 wire [31:0]num_blocks;			// number of 256 byte blocks to save in EPCS16
 wire EPCS_FIFO_enable;			// EPCS fifo write enable
 wire IP_write_done;				// set when IP address has been written to the EEPORM
-wire write_IP;						// set when request to write IP address received
+//wire write_IP;						// set when request to write IP address received
 wire [31:0]IP_to_write;		   // IP address to write to EEPROM
-wire read_IP_address;		   // set when we want to read the IP address from the EEPROM
-wire IP_ready;						// set when IP address is available from the EEPROM
-wire send_IP;						// set when we want to send the IP address to the PC
-wire send_IP_ACK;					// set when the IP address has been sent to the PC
-wire read_IP;						// set when PC requests the IP address from EEPROM
+//wire read_IP_address;		   // set when we want to read the IP address from the EEPROM
+//wire IP_ready;						// set when IP address is available from the EEPROM
+//wire send_IP;						// set when we want to send the IP address to the PC
+//wire send_IP_ACK;					// set when the IP address has been sent to the PC
+//wire read_IP;						// set when PC requests the IP address from EEPROM
 
 
 Rx_MAC Rx_MAC_inst (.PHY_RX_CLOCK(PHY_RX_CLOCK), .PHY_data_clock(PHY_data_clock),.RX_DV(RX_DV), .PHY_RX(PHY_RX),
@@ -778,8 +786,8 @@ Rx_MAC Rx_MAC_inst (.PHY_RX_CLOCK(PHY_RX_CLOCK), .PHY_data_clock(PHY_data_clock)
 			        .Ping_PC_IP(Ping_PC_IP), .Port(Port), .seq_error(seq_error), .data_match(data_match),
 			        .run(run), .IP_lease(IP_lease), .DHCP_IP(DHCP_IP), .DHCP_MAC(DHCP_MAC),
 			        .erase(erase), .erase_ACK(erase_ACK), .num_blocks(num_blocks), .EPCS_FIFO_enable(EPCS_FIFO_enable),
-			        .wide_spectrum(wide_spectrum), .IP_write_done(IP_write_done), .write_IP(write_IP), .IP_to_write(IP_to_write),
-					  .read_IP(read_IP), .IP_ready(IP_ready), .send_IP(send_IP), .send_IP_ACK(send_IP_ACK), .IP_PC_MAC(IP_PC_MAC)
+			        .wide_spectrum(wide_spectrum), .IP_write_done(IP_write_done), .write_IP(write_IP),
+					  .IP_to_write(IP_to_write) 
 			        );
 			        
 
@@ -791,6 +799,7 @@ Rx_MAC Rx_MAC_inst (.PHY_RX_CLOCK(PHY_RX_CLOCK), .PHY_data_clock(PHY_data_clock)
 wire [10:0] PHY_Tx_rdused;  
 wire LED;
 wire Tx_fifo_rdreq;
+//wire ARP_sent_Tx;
 wire ARP_sent;
 wire  DHCP_discover;
 reg  [7:0] RS232_data;
@@ -819,56 +828,52 @@ Tx_MAC Tx_MAC_inst (.Tx_clock(Tx_clock), .Tx_clock_2(Tx_clock_2), .IF_rst(IF_rst
 			        .send_more_ACK(send_more_ACK), .Angelia_version(Angelia_version),
 			        .sp_fifo_rddata(sp_fifo_rddata), .sp_fifo_rdreq(sp_fifo_rdreq), 
 			        .sp_fifo_rdused(), .wide_spectrum(wide_spectrum), .have_sp_data(sp_data_ready),
-					  .send_IP(send_IP), .send_IP_ACK(send_IP_ACK), .AssignIP(AssignIP), .IP_PC_MAC(IP_PC_MAC)
+					  .AssignIP(AssignIP)
 			        ); 
 
 //------------------------ sequence ARP and Ping requests -----------------------------------
 
-// send ARP reply, set Send_ARP on the request and clear when done
-
-wire Send_ARP;
-wire ping_reply;
+reg Send_ARP;
+reg ping_reply;
 reg ping_sent;
-reg [6:0]times_up;			// time out counter so code wont hang here
+reg [16:0]times_up;			// time out counter so code wont hang here
 reg [1:0] state;
-reg [1:0] next_state;
+//reg disable_ARP_reply;		// to ensure multiple ARP replies do not occur for each ARP request
 
 parameter IDLE = 2'd0,
 			  ARP = 2'd1,
 			 PING = 2'd2;
 
-always @ (posedge PHY_RX_CLOCK)
-	state <= next_state;
-
-always @ (state)
+always @ (posedge Tx_clock/*PHY_RX_CLOCK*/)
 begin
 	case (state)
-
 	IDLE: begin
-			times_up = 0;					// reset time out counter
-				if (ARP_request) 			next_state = ARP;
-				else if (ping_request) 	next_state = PING;
-				else 							next_state = IDLE;
+				times_up   <= 0;
+				Send_ARP   <= 0;
+				ping_reply <= 0;
+				if (ARP_request) /*begin
+					*/state <= ARP;
+					//disable_ARP_reply <= 1'b0;	// prep to send a single ARP reply
+				//end
+				else if (ping_request) state <= PING;
 			end
-
-	ARP:	begin
-				if (ARP_sent || times_up == 100) next_state = IDLE;
-				else 										next_state = ARP;
-			times_up = times_up + 7'd1;
+	
+	ARP:	begin	
+				/*if (!disable_ARP_reply) */Send_ARP <= 1'b1;		// send an ARP reply
+				if (ARP_sent || times_up > 100000) state <= IDLE;
+				times_up <= times_up + 17'd1;
+				//disable_ARP_reply <= 1'b1;		//allow only a single ARP reply for each trip through this ARP case
 			end
-
+			
 	PING:	begin
-				if (ping_sent || times_up == 100) next_state = IDLE;
-				else 										next_state = PING;
-			times_up = times_up + 7'd1;
-			end
+				ping_reply <= 1'b1;	
+				if (ping_sent || times_up > 100000) state <= IDLE;
+				times_up <= times_up + 17'd1;
+			end 
 
-	default: next_state = IDLE;
+	default: state = IDLE;
 	endcase
 end
-
-// output assignments
-assign {ping_reply,Send_ARP} = state[1:0];
 
 
 //----------------------------------------------------
@@ -1025,10 +1030,11 @@ wire erase_done;
 wire send_more;
 wire erase_done_ACK;
 wire send_more_ACK;
+wire reset_FPGA;
 
 ASMI_interface  ASMI_int_inst(.clock(Tx_clock), .busy(busy), .erase(erase), .erase_ACK(erase_ACK), .IF_PHY_data(EPCS_data),
 							 .IF_Rx_used(EPCS_Rx_used), .rdreq(EPCS_rdreq), .erase_done(erase_done), .num_blocks(num_blocks),
-							 .erase_done_ACK(erase_done_ACK), .send_more(send_more), .send_more_ACK(send_more_ACK), .NCONFIG(NCONFIG)); 
+							 .erase_done_ACK(erase_done_ACK), .send_more(send_more), .send_more_ACK(send_more_ACK), .NCONFIG(reset_FPGA)); 
 
 //---------------------------------------------------------
 //		Send L/R audio to TLV320 in I2S format
@@ -1111,25 +1117,25 @@ cdc_sync #(32)
 	freq1 (.siga(IF_frequency[1]), .rstb(C122_rst), .clkb(C122_clk), .sigb(C122_frequency_HZ[0])); // transfer Rx1 frequency
 
 cdc_sync #(32)
-	freq2 (.siga(IF_frequency[2]), .rstb(C122_rst), .clkb(C122_clk), .sigb(C122_frequency_HZ[1])); // transfer Rx2 frequency
+	freq2 (.siga(IF_frequency[2]), .rstb(C122_rst), .clkb(C122_clk_2), .sigb(C122_frequency_HZ[1])); // transfer Rx2 frequency
 
 cdc_sync #(32)
 	freq3 (.siga(IF_frequency[3]), .rstb(C122_rst), .clkb(C122_clk), .sigb(C122_frequency_HZ[2])); // transfer Rx3 frequency
 
 cdc_sync #(32)
-	freq4 (.siga(IF_frequency[4]), .rstb(C122_rst), .clkb(C122_clk), .sigb(C122_frequency_HZ[3])); // transfer Rx4 frequency
+	freq4 (.siga(IF_frequency[4]), .rstb(C122_rst), .clkb(C122_clk_2), .sigb(C122_frequency_HZ[3])); // transfer Rx4 frequency
 	
 cdc_sync #(32)
 	freq5 (.siga(IF_frequency[5]), .rstb(C122_rst), .clkb(C122_clk), .sigb(C122_frequency_HZ[4])); // transfer Rx5 frequency
 
 cdc_sync #(32)
-	freq6 (.siga(IF_frequency[6]), .rstb(C122_rst), .clkb(C122_clk), .sigb(C122_frequency_HZ[5])); // transfer Rx6 frequency
+	freq6 (.siga(IF_frequency[6]), .rstb(C122_rst), .clkb(C122_clk_2), .sigb(C122_frequency_HZ[5])); // transfer Rx6 frequency
 
 cdc_sync #(32)
 	freq7 (.siga(IF_frequency[7]), .rstb(C122_rst), .clkb(C122_clk), .sigb(C122_frequency_HZ[6])); // transfer Rx7 frequency
 
 
-	cdc_sync #(32)
+cdc_sync #(32)
 	LR_audio (.siga({IF_Left_Data,IF_Right_Data}), .rstb(C122_rst), .clkb(C122_clk), .sigb(C122_LR_data)); // transfer Left and Right audio
 
 cdc_sync #(2)
@@ -1214,14 +1220,30 @@ wire      [23:0] rx_I [0:NR-1];
 wire      [23:0] rx_Q [0:NR-1];
 wire             strobe [0:NR-1];
 wire		 [31:0] Rx2_phase_word;
-wire  IF_IQ_Data_rdy;
-wire [47:0] IF_IQ_Data;
+wire  			  IF_IQ_Data_rdy;
+wire 		 [47:0] IF_IQ_Data;
+
+// set the decimation rate 40 = 48k.....20 = 96k
+	
+	reg [5:0] sampling_rate;
+	
+	always @ ({C122_DFS1, C122_DFS0})
+	begin 
+		case ({C122_DFS1, C122_DFS0})		
+		0: sampling_rate <= 6'd40; 		//  48ksps 
+		1: sampling_rate <= 6'd20;			//  96ksps
+		2: sampling_rate <= 6'd10;			//  192ksps
+		3: sampling_rate <= 6'd5;			//  384ksps
+		
+		default: sampling_rate <= 6'd40;
+		endcase
+	end 
 
 localparam M2 = 32'd1172812403;  // B57 = 2^57.   M2 = B57/122880000
 
 generate
   genvar c;
-  for (c = 0; c < NR; c = c + 1) // calc freq phase word for 2 freqs (Rx1, Rx2)
+  for (c = 0; c < NR; c = c + 1) // calc freq phase word for 7 freqs (Rx1, Rx2..., Rx7)
    begin: MDC 
     assign C122_ratio[c] = C122_frequency_HZ[c] * M2; // B0 * B57 number = B57 number
 
@@ -1289,21 +1311,21 @@ endgenerate
  receiver receiver_inst0(
 	   //control
 	   .clock(C122_clk),
-	   .rate({C122_DFS1, C122_DFS0}), //00=48, 01=96, 10=192 kHz
+	   .rate(sampling_rate), 
 	   .frequency(C122_sync_phase_word[0]),
 	   .out_strobe(strobe[0]),		
 	   //input
 	   .in_data(temp_ADC[0]),		
 	   //output
 	   .out_data_I(rx_I[0]),
-	   .out_data_Q(rx_Q[0])
+	   .out_data_Q(rx_Q[0]),
 	   );
 
 // receiver 2, uses ADC 2 and Rx 2 phase word
 	 receiver receiver_inst1(
 	   //control
 	   .clock(C122_clk_2),
-	   .rate({C122_DFS1, C122_DFS0}), //00=48, 01=96, 10=192 kHz
+	   .rate(sampling_rate),
 	   .frequency(Rx2_phase_word),
 	   .out_strobe(strobe[1]),		
 	   //input
@@ -1317,7 +1339,7 @@ endgenerate
 	 receiver receiver_inst2(
 	   //control
 	   .clock(C122_clk),
-	   .rate({C122_DFS1, C122_DFS0}), //00=48, 01=96, 10=192 kHz
+	   .rate(sampling_rate),
 	   .frequency(C122_sync_phase_word[2]),
 	   .out_strobe(strobe[2]),		
 	   //input
@@ -1330,8 +1352,8 @@ endgenerate
 // receiver 4, uses ADC 2
 	 receiver receiver_inst3(
 	   //control
-	   .clock(C122_clk),
-	   .rate({C122_DFS1, C122_DFS0}), //00=48, 01=96, 10=192 kHz
+	   .clock(C122_clk_2),
+	   .rate(sampling_rate),
 	   .frequency(C122_sync_phase_word[3]),
 	   .out_strobe(strobe[3]),		
 	   //input
@@ -1345,7 +1367,7 @@ endgenerate
 	 receiver receiver_inst4(
 	   //control
 	   .clock(C122_clk),
-	   .rate({C122_DFS1, C122_DFS0}), //00=48, 01=96, 10=192 kHz
+	   .rate(sampling_rate),
 	   .frequency(C122_sync_phase_word[4]),
 	   .out_strobe(strobe[4]),		
 	   //input
@@ -1358,8 +1380,8 @@ endgenerate
 // receiver 6, uses ADC 2
 	 receiver receiver_inst5(
 	   //control
-	   .clock(C122_clk),
-	   .rate({C122_DFS1, C122_DFS0}), //00=48, 01=96, 10=192 kHz
+	   .clock(C122_clk_2),
+	   .rate(sampling_rate),
 	   .frequency(C122_sync_phase_word[5]),
 	   .out_strobe(strobe[5]),		
 	   //input
@@ -1373,7 +1395,7 @@ endgenerate
 	 receiver receiver_inst6(
 	   //control
 	   .clock(C122_clk),
-	   .rate({C122_DFS1, C122_DFS0}), //00=48, 01=96, 10=192 kHz
+	   .rate(sampling_rate),
 	   .frequency(C122_sync_phase_word[6]),
 	   .out_strobe(strobe[6]),		
 	   //input
@@ -1442,17 +1464,19 @@ Apollo Apollo_inst(
 	.Filter(1'b1),  // Filter(IF_Filter),
 	.Tuner(IF_Tuner),
 	.ANT_TUNE(IF_autoTune),
-	.SPI_SDI(SPI_SDI),							// serial data from Apollo
+	.SPI_SDI(SPI_SDI),							// serial data from Apollo - currently not used 
 	.SPI_SDO(Apollo_SPI_SDO),					// serial data to Apollo
 	.SPI_SCK(Apollo_SPI_SCK),					// clock for Apollo serial data transfer
-	.ApolloStatusLine(ApolloStatus),			// Apollo sets this low when it wants to send data
+	//.ApolloStatusLine(ApolloStatus),			// Apollo sets this low when it wants to send data
+	.ApolloStatusLine(0),			// Apollo sets this low when it wants to send data
 	.ApolloReset(ApolloReset),
-	.ApolloEnable(ApolloEnable),
+	//.ApolloEnable(ApolloEnable),
 	.statusAvailable(ApolloStatusAvailable),	// set true when ApolloStatusBytes have been updated
 	.status(ApolloStatusBytes),					// Status bytes from Apollo.  currently unused.  Some day send some to PC via C&C bytes.
 	.FilterSelect(FilterSelect)
 	);
-				   
+
+	
 //---------------------------------------------------------
 //                 Transmitter code 
 //---------------------------------------------------------	
@@ -1507,7 +1531,7 @@ cicint cic_Q(.clk(_122MHz), .clk_enable(1'b1), .reset(C122_rst), .filter_in(C122
              .filter_out(C122_cic_out_q), .ce_out(C122_ce_out_q));
              
 
-// multiply CIC outputs by 0.9921875, >>> is the Veriloig arrithmetic shift right
+// multiply CIC outputs by 0.9921875, >>> is the Verilog arithmetic shift right
     
 wire signed [15:0] C122_out_i;
 wire signed [15:0] C122_out_q;   
@@ -1939,7 +1963,7 @@ begin
     IF_OC              <= 7'b0;    	// decode open collectors on Angelia
     // RX_CONTROL_3
     IF_ATTEN           <= 2'b0;    	// decode Alex attenuator setting 
-    Preamp             <= 1'b0;    	// decode Preamp (Attenuator), default on
+    Preamp             <= 1'b1;    	// decode Preamp (Attenuator), default on
     IF_DITHER          <= 1'b0;    	// decode dither on or off
     IF_RAND            <= 1'b0;    	// decode randomizer on or off
     IF_RX_relay        <= 2'b0;    	// decode Alex Rx relays
@@ -1952,10 +1976,10 @@ begin
 	 common_Merc_freq   <= 1'b0;		// default independent freq control for Rx2
     IF_Mic_boost       <= 1'b0;    	// mic boost off 
     IF_Drive_Level     <= 8'b0;	   // drive at minimum
-	IF_Line_In			<= 1'b0;			// select Mic input, not Line in
-	IF_Filter			<= 1'b0;			// Apollo filter disabled (bypassed)
-	IF_Tuner			<= 1'b0;				// Apollo tuner disabled (bypassed)
-	IF_autoTune			<= 1'b0;			// Apollo auto-tune disabled
+	 IF_Line_In			  <= 1'b0;		// select Mic input, not Line in
+	 IF_Filter			  <= 1'b0;		// Apollo filter disabled (bypassed)
+	 IF_Tuner			  <= 1'b0;		// Apollo tuner disabled (bypassed)
+	 IF_autoTune		  <= 1'b0;		// Apollo auto-tune disabled
 	 IF_Apollo			  <= 1'b0;     //	Alex selected		
 	 VNA					  <= 1'b0;		// VNA disabled
 	 Alex_manual		  <= 1'b0; 	  	// default manual Alex filter selection (0 = auto selection, 1 = manual selection)

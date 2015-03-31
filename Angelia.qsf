@@ -210,6 +210,26 @@ set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_
 set_global_assignment -name MISC_FILE Hermes.dpf
 set_global_assignment -name MISC_FILE Hermes_V1.4/Hermes.dpf
 set_global_assignment -name MISC_FILE Hermes_V1.5/Hermes.dpf
+set_global_assignment -name VERILOG_FILE Polyphase_FIR/firromH.v
+set_global_assignment -name VERILOG_FILE Polyphase_FIR/firram36.v
+set_global_assignment -name QIP_FILE Polyphase_FIR/firram36.qip
+set_global_assignment -name VERILOG_FILE Polyphase_FIR/firfilt.v
+set_global_assignment -name MIF_FILE Polyphase_FIR/coefL8H.mif
+set_global_assignment -name MIF_FILE Polyphase_FIR/coefL8G.mif
+set_global_assignment -name MIF_FILE Polyphase_FIR/coefL8F.mif
+set_global_assignment -name MIF_FILE Polyphase_FIR/coefL8E.mif
+set_global_assignment -name MIF_FILE Polyphase_FIR/coefL8D.mif
+set_global_assignment -name MIF_FILE Polyphase_FIR/coefL8C.mif
+set_global_assignment -name MIF_FILE Polyphase_FIR/coefL8B.mif
+set_global_assignment -name MIF_FILE Polyphase_FIR/coefL8A.mif
+set_global_assignment -name TEXT_FILE Polyphase_FIR/coefL8.txt
+set_global_assignment -name MIF_FILE Polyphase_FIR/coefL8.mif
+set_global_assignment -name LICENSE_FILE Polyphase_FIR/coefL8.dat
+set_global_assignment -name SDC_FILE Angelia.sdc
+set_global_assignment -name VERILOG_FILE SP_fifo.v
+set_global_assignment -name VERILOG_FILE PHY_fifo.v
+set_global_assignment -name VERILOG_FILE firX8R8.v
+set_global_assignment -name VERILOG_FILE ASMI_inst.v
 set_global_assignment -name VERILOG_FILE Angelia_Tx_fifo_ctrl.v
 set_global_assignment -name VERILOG_FILE Angelia_ADC.v
 set_global_assignment -name VERILOG_FILE Angelia_clk_lrclk_gen.v
@@ -270,3 +290,4 @@ set_global_assignment -name QIP_FILE fir_coeffs_rom.qip
 set_global_assignment -name QIP_FILE fir_shiftreg.qip
 set_global_assignment -name QIP_FILE memcic_ram.qip
 set_global_assignment -name QIP_FILE mult_24Sx24S.qip
+set_global_assignment -name SEARCH_PATH Polyphase_FIR/ -tag from_archive

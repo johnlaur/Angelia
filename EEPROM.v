@@ -149,6 +149,7 @@ reg MAC_ready;						// high when we have a MAC address available
 reg IP_ready;						// high when we have an IP address available
 reg IP_flag;						// set when we are processing an IP request
 reg IP_write_done;				// set when IP address has been written to memory
+reg [16:0]delay;
 
 localparam	WREN = 8'h06;
 
@@ -161,6 +162,7 @@ begin
 		MAC_ready <= 0;								// reset ready flags
 		IP_write_done <= 0;
 		IP_ready  <= 0;
+		delay <= 0;
 			if (read_MAC) begin 						// loop until we get a command
 				EEPROM_read <= 16'h03FA; 			// set read address where MAC is located
 				CS <= 0;
@@ -204,7 +206,7 @@ begin
 	// now read the MAC or IP data from the EEPROM
 	3:	begin 
 			if (IP_flag) begin 
-				if (shift_count != 32) begin 			// ++++ why does this work - should be 33? 
+				if (shift_count != 32) begin 			
 					This_IP <= {This_IP[30:0],SO};
 					shift_count <= shift_count + 1'b1;
 					EEPROM <= EEPROM + 1'b1;
@@ -237,7 +239,6 @@ begin
 		
 	// delay so calling program has time to see ready flags, then back to start
 	5:	EEPROM <= 0;
-	
 	
 	// send WREN out
 	6:  begin

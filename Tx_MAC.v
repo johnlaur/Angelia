@@ -109,7 +109,7 @@ module Tx_MAC (Tx_clock, Tx_clock_2, IF_rst, Send_ARP,ping_reply,
 			   IP_valid, printf, IP_lease, DHCP_IP, DHCP_MAC, DHCP_request_renew, DHCP_request_renew_sent,
 			   erase_done, erase_done_ACK, send_more, send_more_ACK, Angelia_version,
 			   sp_fifo_rddata, sp_fifo_rdreq, sp_fifo_rdempty, sp_fifo_rdused, have_sp_data,
-				send_IP, send_IP_ACK, AssignIP, IP_PC_MAC);
+				 AssignIP);
 			   
 			   
 			   
@@ -134,7 +134,6 @@ input  [47:0]ARP_PC_MAC;		// MAC address of PC requesting ARP
 input  [31:0]ARP_PC_IP;			// IP address of PC requesting ARP
 input  [47:0]Ping_PC_MAC;		// MAC address of PC requesting ping
 input  [31:0]Ping_PC_IP;		// IP address of PC requesting ping
-input  [47:0]IP_PC_MAC;       // IP address of PC requesting/setting IP address
 input  [15:0]Length;				// Lenght of packet - used by ping
 input  speed_100T;				// high for 100T,low for 1000T       ************  check
 input  Tx_reset;					// high to prevent I&Q data being sent
@@ -148,12 +147,11 @@ input  [47:0]DHCP_MAC;			// MAC address of DHCP server
 input  DHCP_request_renew;		// set when renew required
 input  erase_done;				// set when we what to tell the PC we have completed the EPCS16 erase
 input  send_more;					// set when we want the next block of 256 bytes for the EPCS16
-input  [7:0]Angelia_version;	// Angelia firmware code version
+input  [7:0]Angelia_version;		// Angelia code version
 input  [7:0]sp_fifo_rddata;		// raw ACD data from Mercury for wide bandscope
 input  sp_fifo_rdempty;			// SP_fifo read empty
-input  [12:0]sp_fifo_rdused;	// SP_fifo contents
+input  [12:0]sp_fifo_rdused;		// SP_fifo contents
 input  have_sp_data;				// high when sp_fifo is full.
-input  send_IP;				   // high when need to send IP address
 input  [31:0]AssignIP;			// IP address read from EEPROM
 
 output LED;							// show MAC is doing something!
@@ -169,7 +167,6 @@ output DHCP_request_renew_sent;	// high when has been sent
 output erase_done_ACK;			// set when we have sent erase of EPCS16 complete to PC
 output send_more_ACK;			// set when we confirm we have requested more EPCS data from PC
 output sp_fifo_rdreq;			// SP_fifo read require signal
-output send_IP_ACK;				// high when request to send IP has been sent
 
 
 
@@ -213,7 +210,7 @@ reg [7:0] Tx_data;
 reg [4:0] gap_count;
 reg ARP_sent;					    	// true when we have replied to an ARP request
 reg LED; 						    	// Test LED
-reg erase_done_ACK;					// set when we have sent erase of EPCS128 complete to PC
+reg erase_done_ACK;					// set when we have sent erase of EPCS16 complete to PC
 reg send_more_ACK;					// set when we confirm we have requested more EPCS data from PC
 reg [31:0]Discovery_IP;				// IP address of PC doing Discovery
 reg [47:0]Discovery_MAC;			// MAC address of PC doing Discovery
@@ -903,37 +900,6 @@ case(rdaddress)
  779: pkt_data <= 8'hFF;
  // followed by CRC32 at 58
 
-//----------  Send IP address request -  Raw Ethernet Frames ---------- 
-// Ethernet preamble
- 800: pkt_data <= 8'h55;
- 801: pkt_data <= 8'h55;
- 802: pkt_data <= 8'h55;
- 803: pkt_data <= 8'h55;
- 804: pkt_data <= 8'h55;
- 805: pkt_data <= 8'h55;
- 806: pkt_data <= 8'h55;
- 807: pkt_data <= 8'hD5;
-// Ethernet header
- 808: pkt_data <= IP_PC_MAC[47:40];		// MAC address of PC we are sending to 
- 809: pkt_data <= IP_PC_MAC[39:32];
- 810: pkt_data <= IP_PC_MAC[31:24];
- 811: pkt_data <= IP_PC_MAC[23:16];
- 812: pkt_data <= IP_PC_MAC[15:8];
- 813: pkt_data <= IP_PC_MAC[7:0];
- 814: pkt_data <= IP_MAC[47:40]; 	// MAC address when reading/writing IP address
- 815: pkt_data <= IP_MAC[39:32]; 
- 816: pkt_data <= IP_MAC[31:24];
- 817: pkt_data <= IP_MAC[23:16]; 
- 818: pkt_data <= IP_MAC[15:8];  
- 819: pkt_data <= IP_MAC[7:0];   
-// Start of Payload
- 820: pkt_data <= Type_1;	    		// Ethernet Frame type 0xEFFE (HPSDR)
- 821: pkt_data <= Type_2;
- 822: pkt_data <= HPSDR_IP_frame;	// HPSDR IP Frame type 
- 823: pkt_data <= 8'h4;					// command result
-  // send data here then	
-  // followed by 42 bytes of 0x00
-  // then CRC32 at 58
 
   default: pkt_data <= 0;
 endcase
@@ -973,7 +939,6 @@ RESET:
 	interframe <= 0;
 	erase_done_ACK <= 0;
 	send_more_ACK <= 0;
-	send_IP_ACK <= 0;
 	IP_count <= 0;		
 	
         if (IF_rst)
@@ -988,12 +953,6 @@ RESET:
 				state_Tx <= PRINTF;
 			end 
 			
-			else if (send_IP) begin								// send the IP address held in the EEPROM
-				rdaddress <= 800;
-				send_IP_ACK <= 1'b1;
-				temp_IP <= AssignIP; 							// AssignIP is IP address read from the EEPROM
-				state_Tx = SENDIP;
-			end 
 			
 			else if (DHCP_discover) begin
 				rdaddress <= 300;				// point to start of DHCP table	
@@ -1046,8 +1005,7 @@ RESET:
 				state_Tx <= SPECTRUM;
 			end
 
-			else
-				state_Tx <= RESET;	
+			else	state_Tx <= RESET;
 		end
    end
 
@@ -1097,8 +1055,8 @@ METIS_DISCOVERY:
 			rdaddress <= rdaddress + 1'b1;
 			state_Tx <= METIS_DISCOVERY;
 		end
-		else if (zero_count < 50)begin				// send 50 x 0x01s *** tidy code, Hermes ID for PC code.
-			Tx_data <= 8'h04;								// arbitrarily, set Angelia ID = 4
+		else if (zero_count < 50)begin				// send 50 x 0x04s *** tidy code, Angelia ID for PC code.
+			Tx_data <= 8'h04;
 			zero_count <= zero_count + 1'b1;
 			state_Tx <= METIS_DISCOVERY;	
 		end 
@@ -1392,39 +1350,7 @@ SPECTRUM:
 		reset_CRC <= 1'b0;
   end 	
   
-SENDIP:
-    begin
-		if (rdaddress != 824) begin				// keep sending until we reach the end of the fixed data 
-			Tx_data <= pkt_data;
-			sync_Tx_CTL <= 1'b1;					// enable write to Tx FIFO
-			rdaddress <= rdaddress + 1'b1;
-			state_Tx <= SENDIP;
-		end 
-		// else send the IP address
-		else if (IP_count != 5) begin
-			Tx_data = temp_IP[31:24];
-			temp_IP <= {temp_IP[23:0],8'h00};
-			IP_count <= IP_count + 1'b1;
-			state_Tx <= SENDIP;
-		end 		
-		// now send 42 bytes of 0x00 
-		else if (data_count != 42) begin
-			Tx_data <= 0;  				
-			data_count <= data_count + 1'b1;	// increment loop counter
-			state_Tx <= SENDIP;
-		end
-		else begin
-			temp_CRC32 <= CRC32;					// grab the CRC data since it will change next clock pulse
-			Tx_data <= CRC32[7:0];					// send CRC32 to PHY
-			rdaddress <= 58; 
-			state_Tx <= CRC;						// done, so now add the remainder of the CRC32
-		end  											 
 		
-		if (rdaddress == 807)
-			reset_CRC <= 1'b1; 					// start CRC32 generation
-		else 
-			reset_CRC <= 1'b0;
-    end   
   
   
 	

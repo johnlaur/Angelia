@@ -20,25 +20,17 @@ Boston, MA  02110-1301, USA.
 //           Copyright (c) 2008 Alex Shovkoplyas, VE3NEA
 //------------------------------------------------------------------------------
 
+// 2013 Jan 26	- Modified to accept decimation values from 1-40. VK6APH 
 
-
-module varcic( extra_decimation, clock, in_strobe,  out_strobe, in_data, out_data );
-
+module varcic(decimation, clock, in_strobe,  out_strobe, in_data, out_data );
 
   //design parameters
   parameter STAGES = 5;
-  parameter DECIMATION = 320;  
-  parameter IN_WIDTH = 22;
-
-
-  //computed parameters
-  //ACC_WIDTH = IN_WIDTH + Ceil(STAGES * Log2(decimation factor))
-  //OUT_WIDTH = IN_WIDTH + Ceil(Log2(decimation factor) / 2)
-  parameter ACC_WIDTH = 64;
-  parameter OUT_WIDTH = 27;
-
-  //00 = DECIMATION*4, 01 = DECIMATION*2, 10 = DECIMATION
-  input [1:0] extra_decimation;
+  parameter IN_WIDTH = 18;
+  parameter ACC_WIDTH = 45;
+  parameter OUT_WIDTH = 18;
+  
+  input [5:0] decimation; 
   
   input clock;
   input in_strobe;
@@ -46,9 +38,6 @@ module varcic( extra_decimation, clock, in_strobe,  out_strobe, in_data, out_dat
 
   input signed [IN_WIDTH-1:0] in_data;
   output reg signed [OUT_WIDTH-1:0] out_data;
-
-
-
 
 
 //------------------------------------------------------------------------------
@@ -61,7 +50,7 @@ initial sample_no = 16'd0;
 always @(posedge clock)
   if (in_strobe)
     begin
-    if (sample_no == ((DECIMATION << (2-extra_decimation))-1))
+    if (sample_no == (decimation - 1))
       begin
       sample_no <= 0;
       out_strobe <= 1;
@@ -75,10 +64,6 @@ always @(posedge clock)
 
   else
     out_strobe <= 0;
-
-
-
-
 
 
 //------------------------------------------------------------------------------
@@ -115,32 +100,68 @@ generate
 endgenerate
 
 
-
-
-
-
-
 //------------------------------------------------------------------------------
 //                            output rounding
 //------------------------------------------------------------------------------
-localparam MSB0 = ACC_WIDTH - 1;            //63
-localparam LSB0 = ACC_WIDTH - OUT_WIDTH;    //41
 
-localparam MSB1 = MSB0 - STAGES;            //58
-localparam LSB1 = LSB0 - STAGES;            //36
+/*
+-----------------------------------------------------
+ Output rounding calculations for 5 stages 
 
-localparam MSB2 = MSB1 - STAGES;            //53
-localparam LSB2 = LSB1 - STAGES;            //31
+ sample rate (ksps)  decimation 	 bit growth  
+ 		   48						40			27
+			96						20			22
+		  192						10			17
+		  240						 8			15
+        384						 5			12
+        480						 4			10
+		  960  					 2			 5
+-------------------------------------------------------		  
+*/		
+
+localparam GROWTH2  =  5;
+localparam GROWTH4  = 10;
+localparam GROWTH5  = 12;
+localparam GROWTH8  = 15;
+localparam GROWTH10 = 17;
+localparam GROWTH20 = 22;
+localparam GROWTH40 = 27;
+
+localparam MSB2  =  (IN_WIDTH + GROWTH2)  - 1;           // 18 + 5 - 1 =  22
+localparam LSB2  =  (IN_WIDTH + GROWTH2)  - OUT_WIDTH;   // 5
+
+localparam MSB4  =  (IN_WIDTH + GROWTH4)  - 1;           // 18 + 10 -1 =  27 
+localparam LSB4  =  (IN_WIDTH + GROWTH4)  - OUT_WIDTH;   // 10
+
+localparam MSB5  =  (IN_WIDTH + GROWTH5)  - 1;           // 18 + 12 - 1 = 29  
+localparam LSB5  =  (IN_WIDTH + GROWTH5)  - OUT_WIDTH;   // 12
+
+localparam MSB8  =  (IN_WIDTH + GROWTH8)  - 1;           // 18 + 15 - 1 = 32
+localparam LSB8  =  (IN_WIDTH + GROWTH8)  - OUT_WIDTH;   // 15
+
+localparam MSB10 =  (IN_WIDTH + GROWTH10) - 1;           // 18 + 17 - 1 = 34
+localparam LSB10 =  (IN_WIDTH + GROWTH10) - OUT_WIDTH;   // 17 
+
+localparam MSB20 =  (IN_WIDTH + GROWTH20) - 1;    			// 18 + 22 - 1 = 39       
+localparam LSB20 =  (IN_WIDTH + GROWTH20) - OUT_WIDTH;   // 22
+
+localparam MSB40 =  (IN_WIDTH + GROWTH40) - 1;     		// 18 + 27 - 1 = 44
+localparam LSB40 =  (IN_WIDTH + GROWTH40) - OUT_WIDTH;   // 27            
 
 
 always @(posedge clock)
-  case (extra_decimation)
-    0: out_data <= comb_data[STAGES][MSB0:LSB0] + comb_data[STAGES][LSB0-1];
-    1: out_data <= comb_data[STAGES][MSB1:LSB1] + comb_data[STAGES][LSB1-1];
-    2: out_data <= comb_data[STAGES][MSB2:LSB2] + comb_data[STAGES][LSB2-1];
+  case (decimation)
+	   2: out_data <= comb_data[STAGES][MSB2:LSB2] 	 + comb_data[STAGES][LSB2-1];
+	   4: out_data <= comb_data[STAGES][MSB4:LSB4]   + comb_data[STAGES][LSB4-1];
+	   5: out_data <= comb_data[STAGES][MSB5:LSB5]   + comb_data[STAGES][LSB5-1];
+	   8: out_data <= comb_data[STAGES][MSB8:LSB8]   + comb_data[STAGES][LSB8-1];
+	  10: out_data <= comb_data[STAGES][MSB10:LSB10] + comb_data[STAGES][LSB10-1];
+	  20: out_data <= comb_data[STAGES][MSB20:LSB20] + comb_data[STAGES][LSB20-1];
+	  40: out_data <= comb_data[STAGES][MSB40:LSB40] + comb_data[STAGES][LSB40-1];
   endcase
 
 
 
 endmodule
 
+  

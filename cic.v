@@ -116,7 +116,7 @@ endgenerate
 assign out_data = comb_data[STAGES][ACC_WIDTH-1:ACC_WIDTH-OUT_WIDTH] +
   {{(OUT_WIDTH-1){1'b0}}, comb_data[STAGES][ACC_WIDTH-OUT_WIDTH-1]};
 
-
+//assign out_data = comb_data[STAGES][36:19] + comb_data[STAGES][18];
 
 
 endmodule
