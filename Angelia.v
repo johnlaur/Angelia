@@ -152,6 +152,8 @@
 						- added support for dual ADCs
 						- added support for independent attenuator control for inputs to ADC1 & ADC2
 						- set version number to v2.1
+	10 Jan 2014		- fixed intermittent hang problem by using Tx_clock in the ARP/PING Always statement (~line 900)
+						- set version number to v2.2
 	
 
 
@@ -365,7 +367,7 @@ assign  IO1 = 1'b0;  						// low to enable, high to mute
 parameter M_TPD   = 4;
 parameter IF_TPD  = 2;
 
-parameter  Angelia_version = 8'd21;		// Serial number of this version
+parameter  Angelia_version = 8'd22;		// Serial number of this version
 localparam Penny_serialno = 8'd00;		// Use same value as equ1valent Penny code 
 localparam Merc_serialno = 8'd00;		// Use same value as equivalent Mercury code
 
@@ -890,7 +892,8 @@ parameter IDLE = 2'd0,
 			  ARP = 2'd1,
 			 PING = 2'd2;
 
-always @ (posedge PHY_RX_CLOCK)
+//always @ (posedge PHY_RX_CLOCK)
+always @ (posedge Tx_clock)
 begin
 	case (state)
 	IDLE: begin
