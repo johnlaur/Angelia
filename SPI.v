@@ -89,7 +89,7 @@ input wire spi_clock;
 
 reg [3:0]spi_state;
 reg [4:0]data_count;
-reg [31:0]previous_Alex_data;	// used to detect change in data 
+reg [31:0]previous_Alex_data;	// used to detect change in data
 
 
 always @ (posedge spi_clock)
@@ -132,7 +132,7 @@ case (spi_state)
 	end
 6:	begin
 	Rx_load_strobe <= 1'b0;				// reset Rx strobe
-	previous_Alex_data <= Alex_data; // save current data 
+	previous_Alex_data <= Alex_data; // save current data
 	spi_state <= 0;						// reset for next run
 	end
 	

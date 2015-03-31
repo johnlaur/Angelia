@@ -18,7 +18,7 @@
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 // (C) Phil Harman VK6APH, Kirk Weedman KD7IRS 20019, 2012
-// (C) Joe Martin K5SO 2012
+// (C) Joe Martin K5SO 2013
 
 
 

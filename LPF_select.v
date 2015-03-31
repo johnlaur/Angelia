@@ -45,18 +45,16 @@ input  wire        clock;
 input  wire [31:0] frequency;	
 output reg   [6:0] LPF;
 
-// Select highest LPF dependent on frequency in use, frequency is in Hz
+// Select highest LPF dependant on frequency in use, frequency is in Hz
 		
 always @(posedge clock)  
 begin 
-	if  	(frequency > 32000000) LPF <= 7'b0010000;			// > 10m so use 6m LPF
-//	else if (frequency > 22000000) LPF <= 7'b0100000;  	// > 15m so use 12/10m LPF ...changed for ANAN-100D support
-	else if (frequency > 25000000) LPF <= 7'b0100000;  	// > 12m so use 12/10m LPF ...use 15/17M filter for 12M
+	if  	(frequency > 32000000) 	 LPF <= 7'b0010000;		// > 10m so use 6m LPF
+	else if (frequency > 22000000) LPF <= 7'b0100000;  	// > 15m so use 12/10m LPF
 	else if (frequency > 15000000) LPF <= 7'b1000000;  	// > 20m so use 17/15m LPF
 	else if (frequency > 8000000)  LPF <= 7'b0000001;  	// > 40m so use 30/20m LPF  
 	else if (frequency > 4500000)  LPF <= 7'b0000010;  	// > 80m so use 60/40m LPF
 	else if (frequency > 2400000)  LPF <= 7'b0000100;  	// > 160m so use 80m LPF  
-	else LPF <= 7'b0001000; 										// < 2.4MHz so use 160m LPF
+	else 						   		 LPF <= 7'b0001000; 		// < 2.4MHz so use 160m LPF
 end 
-
 endmodule

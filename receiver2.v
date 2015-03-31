@@ -29,14 +29,14 @@ Boston, MA  02110-1301, USA.
 
 
 
-module receiver(
+module receiver2(
   input clock,                  //122.88 MHz
   input [5:0] rate,             //48k....960k
   input [31:0] frequency,
   output out_strobe,
   input signed [15:0] in_data,
-  output [23:0] out_data_I,
-  output [23:0] out_data_Q,
+  output signed [23:0] out_data_I,
+  output signed [23:0] out_data_Q,
   output test_strobe3
   );
 
@@ -44,11 +44,11 @@ wire signed [21:0] cordic_outdata_I;
 wire signed [21:0] cordic_outdata_Q;
 
 // gain adjustment, reduce by 6dB to match previous receiver code.
-wire signed [23:0] out_data_I2;
-wire signed [23:0] out_data_Q2;
+//wire signed [23:0] out_data_I;
+//wire signed [23:0] out_data_Q;
 
-assign out_data_I = (out_data_I2 >>> 1);
-assign out_data_Q = (out_data_Q2 >>> 1);
+//assign out_data_I = (out_data_I2 >>> 1);
+//assign out_data_Q = (out_data_Q2 >>> 1);
 
 
 
@@ -69,10 +69,10 @@ cordic cordic_inst(
  
   // CIC M = 5, R = 8  + Vari CIC m = 5, R = 2..40  + FIR R = 8.
   
-  	// Receive CIC filters followed by FIR filter
-	wire decimA_avail, decimB_avail;
-	wire signed [17:0] decimA_real, decimB_real;
-	wire signed [17:0] decimA_imag, decimB_imag;
+// Receive CIC filters followed by FIR filter
+wire decimA_avail, decimB_avail;
+wire signed [17:0] decimA_real, decimB_real;
+wire signed [17:0] decimA_imag, decimB_imag;
 
 //I channel
 wire cic_outstrobe_2;
@@ -133,7 +133,16 @@ varcic #(.STAGES(5), .IN_WIDTH(18), .ACC_WIDTH(45), .OUT_WIDTH(18))
 
 		
 				
-firX8R8 fir2 (clock, decimB_avail, decimB_real, decimB_imag, out_strobe, out_data_I2, out_data_Q2);
+//firX8R8 fir2 (clock, decimB_avail, decimB_real, decimB_imag, out_strobe, out_data_I, out_data_Q);
+
+wire out_strobe1;
+wire signed [23:0] out_data_I2;
+wire signed [23:0] out_data_Q2;		
+
+// cascaded Polyphase FIR filters, decimate by 4 and decimate by 2. 
+firX4R4 fir2 (clock, decimB_avail, decimB_real, decimB_imag, out_strobe1, out_data_I2, out_data_Q2);
+firX2R2 fir3 (clock, out_strobe1, out_data_I2, out_data_Q2, out_strobe, out_data_I, out_data_Q);
+
   
   
 assign test_strobe3 = out_strobe;

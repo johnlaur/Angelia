@@ -1,6 +1,6 @@
 /***********************************************************
 *
-*	Angelia - Ethernet 
+*	Angelia
 *
 ************************************************************/
 
@@ -24,8 +24,8 @@
 //  along with this program; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-// Copyright(C) Phil Harman VK6APH, Kirk Weedman KD7IRS  2006, 2007, 2008, 2009, 2010, 2011, 2012 
-// Copyright(C) Joe Martin K5SO 2012, 2013
+// (C) Phil Harman VK6APH, Kirk Weedman KD7IRS  2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013 
+
 
 
 
@@ -45,7 +45,7 @@
 	to a complex input CORDIC NCO. The ouput of the CORDIC is at the required user
 	frequency and passed to the final DAC.  
 	
-	The data format over Ethernet is the same as that used my Metis.
+	The data format over Ethenet is the same as that used my Metis.
 	
 	Change log:
 
@@ -60,78 +60,103 @@
 					   - Released as V1.6
 	21  April      - Added support for Alex in auto mode
 						- tidy LED designations
-						- Released as V1.7
+						- Designated V1.7
 	28  April      - Increased Apollo clock from 30kHz to 150kHz	
-	
-						- Released as V1.8
-	20  June       - 
-	30  june       - Renamed file "Angelia", need to rename module
-	               - Changed device EP4CE115F29C8
-						- Reallocated pin assignments for EP4CE115F29C8 
-	
-	31 July			- Added support for second LTC2208 ADC, renamed relevant modules "Angelia" 
-	               - Released as v0.2
-	15 August	   - Fixed de-randomizer code bug
-						- Released as v0.3
-	16 August		- fixed INA_2[9] pin assignment error; moved INA_2[9] from FPGA pin L26 to L27
-						- switched ADC "A" and ADC "B" inputs to receiver modules for stability test
-						- Released as v0.4
-	17 August      - added independent freq for Rx2
-	`					- Released as v0.5
-	17 August      - switched ADC inputs back to normal 
-	               - Released as v0.6
-	18 August		- fixed diversity bug (forced Rx1/Rx2 freq equal when common_Merc_freq asserted)
-						- Released as v0.7
-	3  December    - implemented new FPGA pin assignments for PHY_TX_CLOCK, SRAM, & debug LEDs
-						- fixed bug in the firmware version reporting code
-						- added (Hermes_v2.0) TimeQuest .sdc file to the project for timing contraint definitions
-						- added support for four receivers; odd numbered receivers use ADC 1, even numbered use ADC 2
-						- added improved Alex filter switching support when multiple receivers are in use
-						- added support for Apollo
-						- added support for the 31dB step attenuators (1 dB steps)
-						- Released as v0.8
-	6  December		- fixed bug with "preamp" selection causing inverted "preamp" logic
-						- Released as v0.9
-	9  December		- modified ASMI_interface module to erase EPCS addresses to 0x2C0000 when loading code to 
-							accommodate the size of the present FPGA program design (~1.3 MB) plus some for future design expansion
-						- added support for seven receivers
-						- Released as v1.0
-	14 December		- modified the receiver module to yield 6 dB greater overall gain, to match Hermes/Mercury rx module gain
-						- Released as v1.1
-	29 December		- increased wideband spectrum FIFO size to 16K from 4K
-						- added Alex T/R relay disable option (C&C bit C3[7] when C0=0001_001x)
-						- Released as v1.2
-	30 December    - added ability to read/write Angelia IP address from HPSDRProgrammer without J17 in place
-						- added hardware ID = 4 to specify Angelia is present in PHY comm to PC
-						- released as v1.3. Compiled with Quartus V12.1
-	8 January 2013 - fixed ethernet ARP response bug
-						- released as v1.4
-	7 April 2013	- added new ARP code and ethernet comm code/modules as in Hermes_v2.3, replaced receiver modules
-						  with Hermes_v2.3 style receiver modules implementing "poly-phase" filters, added higher
-						  sampling rate selections as in Hermes_v2.3
-						- released as v1.5
-	15 April 2013  - moved Rx4 to ADC1 and Rx7 to ADC2 until Gigabit ethernet operations can be implemented in order to support 
-						  PowerSDR mRx versions of software better.   
-						- released as v1.6
-	8 May				- reduced the Alex SPI bus speed by half to permit longer ribbon cable connections to Alex, 
+	 5  July       - Fixed sync byte error in Apollo.v and MAC address read error in EEPROM.v
+	               - Increased wide spectrum FIFO from 4k to 16k
+	13             - Increased wide spectrum FIFO to 32k for testing by DL3HVH
+	18             - Test code for Hermes VNA, set to one receiver
+	                 In VNA mode set the Rx and Tx CORDIC phase words to be equal. Set the I input of the Tx CORDIC to
+						  0 and the Q to 0x7FFF/1.7 to remove the CORDIC gain.  Run the VNA when the PTT from the PC is active.
+	 6  Aug        - using CIC and CFIR outputs with I of Tx cordic set to 0 and Q to 0x7FFF/1.7	. See line 1307.	
+   11  Sep        - Use C&C (when C0 = 0001 001x, C2[7]]) to enable VNA mode. 
+   15  Sep        - Set wide spectrum FIFO to 16k.  Enabled second receiver.
+					   - Alex/Apollo selected via C&C rather than J13 											
+                  - released as V1.7
+	23  Sep			- changes by Joe K5SO
+							- Modified FilterSelect to match USB protocol document v1.42 spec for C2[5] when C0[7:1]=0001001
+							- Added dual-Rx automatic Alex LPF/HPF filter switching logic 
+							- Added additional Alex LPF filter switching logic during transmit to accommodate SPLT mode operation correctly
+							- Modified Alex Tx RED LED operation to illuminate when transmitting
+							- Modified HPF/LPF automatic frequency switch-point logic  
+							- Added manual Alex switching logic
+							- Added line-in gain control
+						- Renamed version number to V1.8
+	28 Oct			- changes by Joe K5SO
+							- Added 0-31 dB step option for input attenuator
+						- Renamed version number to V1.9
+	27 Nov			- added TimeQuest Hermes.sdc timing constraint file 
+						- commented out the Apollo module
+						- implemented four receivers
+						- renamed the version number to v4.5
+						- reduced the number of receivers to two once again
+						- added back the Apollo module
+						- used a new TimeQuest .sdc file from Phil
+						- fixed bug with automatic Alex filter selection
+						- renamed the version number to v4.6
+	29 Nov			- increased # of receivers to four
+						- modified the Alex switching code
+						- renamed version to v2.0
+	6  Dec			- added 5 receivers, using Alex VE3NEA's rx modules
+						- modified Alex automatic switching
+	8  Dec			- fixed bug with Rx 5 operation
+	14 December		- modified the receiver module to yield 6 dB greater overall gain, to match Mercury rx module gain
+	17 Dec         - Modified Rx_MAC to use a FIFO to convert from nibble to byte.
+					   - Enabled directed ARP rather than just broadcast
+	30 Dec			- added Alex T/R relay disable option (C&C bit C3[7] when C0=0001_001x, 0=T/R relay enabled, 1=T/R relay disabled)
+						- added abilty to set/read IP address without being in Bootloader mode.
+						- now using Quartus II V12.1
+						- released as v2.1
+	8 Jan 2013		- fixed ethernet ARP request response bug
+					   - modified Apollo code so PTT timer works
+						- changed FSM from 1 Hot to User Encoded so Apollo code works.
+						- Changed Apollo PLL clock from 150kHz to 30kHz.
+						- released as v2.2
+	26             - Replaced FIR with Polyphase FIR. Modified variCIC to decimate from 2...40. Increased max sampling rate to 960kHz
+	               - Reduced receivers to 4 with sampling rates of 48/96/192/384ksps.
+						- Added UDP/IP set IP address
+	10             - Modified Polyphase filter. 
+						- Increased time out for ARP and ping
+						- 4 receivers with 48/96/192/384ksps.
+	12             - 5 receivers - 96% full
+	16					- released as version 2.3
+	2 Mar          - Added ARP/Ping time out mod from Metis.
+						- replace pin defs ready for 1000T code - released as same version
+	7 May				- fixed Alex 6m preamp switching bug
+						- reduced the Alex SPI bus speed by half to permit longer ribbon cable connections to Alex, 
 						- assigned unused Rx freqs to the Tx freq,
-						- changed the 1.5MHz HPF filter automatic switchover freq to 1416 KHz and the LPF automatic switchover freqs
-						  to those used in Hermes_v2.4 to accommodate "stitched" mode rx at up to 384 ksps sampling rates,
-						- changed version number to 1.7
-						
-	10 May			- changed "address !== 24'h2C0000" to "address < 24'h2C0000" on line 101 and included a check in line 
-						  156 in ASMI_interface.v to fix a sporadic bug when updating firmware that sometimes caused the entire 
-						  EEPROM to be erased and to ensure the EEPROM is not writing into undesired locations when using 
-						  HPSDRProgrammer to update firmware.  
-						- changed version number to 1.8
-	15 May			- modified the Alex SPI bus control module to send Alex commands twice whenever any Alex setting is changed,
-						  to improve Alex switching reliability.
-	30 May			- added independent control of attenuator on ADC2.
-						- changed version number to 1.9
-	2 Sept			- changed automatic LPF switching to use 17/15M filter on 12M to increase power out on ANAN-100D on 12M
-						- changed version number to 2.0
-						
-						*** change global clock name **** 
+						- changed the 1.5MHz HPF filter switchover freq to 1416 KHz and the 80m LPF switchover freq
+						  to 2400 KHz to accommodate "stitched" mode rx at up to 384 ksps sampling rates,
+						- changed version number to 2.4
+	27 May			- temporary predistortion version - assigned Tx output to Rx5 input - changed version to v0.4
+	 1 Nov         - Move DAC data to Rx 2 for testing. Carrier +18dBm, noise floor approx -125dBm - works well. 
+	               - Replace CIC with cFIR and CIC from HiQSDR. Works OK, need to swap I&Q. 92% full.
+	18 Nov         - Swap I&Q. OK
+	               - Move DAC data to Rx5. All OK
+	20             - Try by2/by4 on Rx4 only. All OK
+	               - Try by2/by4 on Rx5 as well. No
+	21             - Edit sdc file to remove frequency path. OK now 
+	25             - Edit sdc file to set DACD outputs with -9. Not sure this is better (Warren reports OK), perhaps use posedge of clock on DACD.
+	26             - Use positive edge of clock on DACD and -2 in sdc file.  Rx1 jumps for Warren
+	 2 Dec         - Revert to negeative edge and -9. Meets timing. Reduce gain of by4 FIR buy 7.2dB to match other FIR gain. All OK
+	 4             - Revert By4 gain to unity and increase other FIR to unity.  Reduce peak frequency error by making error symetrical.
+	 6             - Increase cFIR to 1024 coefficients. 
+	 9             - Alternative cFIR with same gain as previously.
+	11             - Corrected cFIR address counter. Works OK.
+	12             - Test Warrens CFIR coefficients. Reduce by4 gain by 7.2dB.
+	13             - Testing truncation on output data of interpolating FIR.  No effect.
+	18             - Enabled VNA features from Hermes V2.5 development and select Rx5 on Rx 
+**********************
+	27 Dec 2013		- ported Hermes design to Angelia hardware...K5SO
+						- increased number of receivers to 7
+						- added support for dual ADCs
+						- added support for independent attenuator control for inputs to ADC1 & ADC2
+						- set version number to v2.1
+	
+
+
+	
+*** change global clock name **** 
   
 
 NOTES: 
@@ -176,159 +201,144 @@ NOTES:
 */
 	
 
-module Angelia(INA, INA_2, 
-				CBCLK, CLRCIN, CDOUT, CDIN, PTT, Status_LED,KEY_DOT, KEY_DASH, FPGA_PTT,
-				CMCLK, LTC2208_122MHz, LTC2208_122MHz_2,CLRCOUT, ATTN_CLK, ATTN_CLK_2, ATTN_DATA, ATTN_DATA_2,
-				ATTN_LE, ATTN_LE_2, RAND, RAND_2, PGA, PGA_2, DITH, DITH_2, SHDN, SHDN_2, 
-				OVERFLOW, OVERFLOW_2,
-				USEROUT0, USEROUT1, USEROUT2, USEROUT3, USEROUT4, USEROUT5, USEROUT6,
-				OSC_10MHZ, FPGA_PLL, CMODE, nCS, MOSI, SSCK, DAC_ALC, DACD,_122MHz,
-				SPI_SDO, SPI_SDI, SPI_SCK, ADCMOSI, ADCCLK, ADCMISO, nADCCS,
-				IO1, IO2,IO4, IO5, IO6, IO8, DEBUG_LED1, DEBUG_LED2, DEBUG_LED3, DEBUG_LED4, DEBUG_LED5, DEBUG_LED6,
-				DEBUG_LED7, DEBUG_LED8, DEBUG_LED9, DEBUG_LED10,RAM_A0,RAM_A1,RAM_A2,RAM_A3,RAM_A4,RAM_A5,RAM_A6,RAM_A7,
-				RAM_A8,RAM_A9,RAM_A10,RAM_A11,RAM_A12,RAM_A13,				
-				PHY_TX,PHY_RX,RX_DV,PHY_TX_CLOCK,PHY_TX_EN, J15_5, J15_6, 
-				PHY_RX_CLOCK,PHY_CLK125,PHY_MDIO,PHY_MDC,PHY_INT_N,PHY_RESET_N,CLK_25MHZ,
-				MODE2,SCK, SI, SO, CS, NCONFIG,	ANT_TUNE );
-				
-parameter M_TPD   = 4;
-parameter IF_TPD  = 2;
+module Angelia(
+	//clock afc
+  input _122MHz,                 //122.88MHz from VCXO
+  input  OSC_10MHZ,              //10MHz reference in 
+  output FPGA_PLL,               //122.88MHz VCXO contol voltage
 
-parameter  Angelia_version = 8'd20;		// Serial number of this version
-localparam Penny_serialno = 8'd00;		// Use same value as equ1valent Penny code 
-localparam Merc_serialno = 8'd00;		// Use same value as equivalent Mercury code
+  //attenuator (DAT-31-SP+)
+  output ATTN_DATA,              //data for input attenuator
+  output ATTN_DATA_2,
+  output ATTN_CLK,               //clock for input attenuator
+  output ATTN_CLK_2, 
+  output ATTN_LE,                //Latch enable for input attenuator
+  output ATTN_LE_2,
 
-localparam RX_FIFO_SZ  = 4096; 			// 16 by 4096 deep RX FIFO
-localparam TX_FIFO_SZ  = 1024; 			// 16 by 1024 deep TX FIFO  
-localparam SP_FIFO_SZ  = 16384; 			// 16 by 16384 deep SP FIFO
+  //rx adc (LTC2208)
+  input  [15:0]INA,              //samples from LTC2208
+  input  [15:0]INA_2,            //samples from LTC2208 #2
+  input  LTC2208_122MHz,         //122.88MHz from LTC2208_122MHz pin 
+  input  LTC2208_122MHz_2,       //122.88MHz from #2 LTC2208_122MHz pin 
+  input  OVERFLOW,               //high indicates LTC2208 have overflow
+  input  OVERFLOW_2,             //high indicates LTC2208 have overflow
+  output RAND,            //high turns ramdom on
+  output RAND_2,          //high turns ramdom on
+  output PGA,            //high turns LTC2208 internal preamp on
+  output PGA_2,          //high turns LTC2208 internal preamp on
+  output DITH,            //high turns LTC2208 dither on 
+  output DITH_2,          //high turns LTC2208 dither on 
+  output SHDN,            //x shuts LTC2208 off
+  output SHDN_2,          //x shuts LTC2208 off
 
-localparam read_reg_address = 5'd31; 	// PHY register to read from - gives connect speed and fully duplex		
-
-input wire [15:0]INA;						// samples from LTC2208 #1
-input wire [15:0]INA_2;						// samples from LTC2208 #2
-
-input wire LTC2208_122MHz;					// 122.88MHz from LTC2208_122MHz pin on "A" ADC
-input wire LTC2208_122MHz_2;				// 122.88MHz from LTC2208_122MHz pin on "B" ADC 
-input wire _122MHz;				   		// 122.88MHz from VCXO
-output wire CMCLK; 			   			// Master Clock to TLV320 
-output wire Status_LED;             	// FPGA Status LED
-output wire CBCLK;  							// Clocks to TLV320AIC23B
-output wire CLRCIN, CLRCOUT;
-output wire CDIN;                   	// Rx data to TLV320AIC23B
-output wire CMODE;							// sets TLV320 mode - I2C or SPI
-output wire nCS;								// chip select on TLV320
-output wire MOSI;								// SPI data for TLV320
-output wire SSCK;								// SPI clock for TLV320
-input  wire PTT;           		    	// PTT active low
-input  wire CDOUT;							// Mic data from TLV320
-input  wire KEY_DOT;							// dot input from J11
-input  wire KEY_DASH;						// dash input from J11
-output SPI_SDO;								// SPI data to Alex or Apollo 
-input  SPI_SDI;								// SPI data from Apollo 
-output SPI_SCK;								// SPI clock to Alex or Apollo 
-output J15_5;									// SPI Rx data load strobe to Alex / Apollo enable
-output J15_6;									// SPI Tx data load strobe to Alex / Apollo ~reset
-output ATTN_CLK;								// clock for input attenuator ADC 1 
-output wire ATTN_CLK_2;						// clock for input attenuator ADC 2
-output ATTN_DATA;								// data for input attenuator ADC 1
-output wire ATTN_DATA_2;					// data for input attenuator ADC 2
-output ATTN_LE;								// Latch enable for input attenuator ADC 1
-output wire ATTN_LE_2;						// Latch enable for input attenuator ADC 2
-output wire RAND;								// high turns ramdom on ADC 1
-output wire RAND_2;							// high turns ramdom on ADC 2
-output wire PGA;								// high turns LTC2208 internal preamp on ADC 1
-output wire PGA_2;							// high turns LTC2208 internal preamp on ADC 2
-output wire DITH;								// high turns LTC2208 dither on ADC 1
-output wire DITH_2;							// high turns LTC2208 dither on ADC 2
-output wire SHDN;								// x shuts LTC2208 off ADC 1
-output wire SHDN_2;							// x shuts LTC2208 off ADC 2
-input  wire OVERFLOW;						// high indicates LTC2208 have overflow ADC 1
-input  wire OVERFLOW_2;						// high indicates LTC2208 have overflow ADC 2
-output wire FPGA_PTT;						// high turns Q4 on for PTTOUT
-output wire USEROUT0;						// user outputs
-output wire USEROUT1;
-output wire USEROUT2;
-output wire USEROUT3;
-output wire USEROUT4;
-output wire USEROUT5;
-output wire USEROUT6;
-output wire DEBUG_LED1;						// debug LEDs
-output wire DEBUG_LED2;
-output wire DEBUG_LED3;
-output wire DEBUG_LED4;
-output wire DEBUG_LED5;
-output wire DEBUG_LED6;
-output wire DEBUG_LED7;
-output wire DEBUG_LED8;
-output wire DEBUG_LED9;
-output wire DEBUG_LED10;
-input  wire OSC_10MHZ;						// 10MHz reference in	
-output wire FPGA_PLL;						// 122.88MHz VCXO contol voltage
-output reg  DAC_ALC;							// sets Tx DAC output level
-output reg signed [13:0]DACD;				// Tx DAC data bus
-output wire ADCMOSI;							// 12 bit ADC contols 
-output wire ADCCLK;
-input  wire ADCMISO;
-output wire nADCCS;
-output  wire IO1;								// high to mute AF amp				
-input  wire IO2;								// PTT, used by Apollo			
-input  wire IO4;								// user digital inputs
-input  wire IO5;
-input  wire IO6;
-input  wire IO8;
-// RAM
-output	wire     RAM_A0;		
-output	wire     RAM_A1;
-output	wire     RAM_A2;
-output	wire     RAM_A3;
-output	wire     RAM_A4;
-output	wire     RAM_A5;
-output	wire     RAM_A6;
-output	wire     RAM_A7;
-output	wire     RAM_A8;
-output	wire     RAM_A9;
-output	wire     RAM_A10;
-output	wire     RAM_A11;
-output	wire     RAM_A12;
-output	wire     RAM_A13;
-
-// PHY
-output  wire [3:0]PHY_TX;
-input   wire [3:0]PHY_RX;		   
-input	wire     RX_DV;						// PHY has data flag
-output	wire     PHY_TX_CLOCK;			// PHY Tx data clock
-output	wire	 PHY_TX_EN;					// PHY Tx enable
-input	wire	 PHY_RX_CLOCK;      			// PHY Rx data clock
-input	wire     PHY_CLK125;					// 125MHz clock from PHY PLL
-inout	wire     PHY_MDIO;					// data line to PHY MDIO
-output	wire 	 PHY_MDC;					// 2.5MHz clock to PHY MDIO
-input	wire 	 PHY_INT_N;	
-output	wire     PHY_RESET_N;
-input	wire 	 CLK_25MHZ;						// 25MHz clock 
-
-// Filters or PA select via J13
-input wire MODE2;								// high with jumper off J13, filter select, high => use Alex, low => use Apollo
-
-assign RAND = IF_RAND;
-assign RAND_2 = IF_RAND;
-assign PGA = 0;								// 1 = gain of 3dB, 0 = gain of 0dB
-assign PGA_2 = 0;
-assign DITH = IF_DITHER;
-assign DITH_2 = IF_DITHER;
-assign SHDN = 1'b0;							// normal LTC2208 operation
-assign SHDN_2 = 1'b0;
-
-// MAC EEPROM
-output wire		SCK; 							// clock on MAC EEPROM
-output wire		SI;							// serial in on MAC EEPROM
-input  wire 	SO; 							// SO on MAC EEPROM
-output wire 	CS;							// CS on MAC EEPROM
-
-// Reload FPGA 
-output wire 	NCONFIG;						// when high causes FPGA to reload from EPCS16 
-
-// ATU
-input wire 	ANT_TUNE;
+  //tx adc (AD9744ARU)
+   output reg  DAC_ALC,           //sets Tx DAC output level
+  output reg signed [13:0]DACD,  //Tx DAC data bus
+  
+  //audio codec (TLV320AIC23B)
+  output CBCLK,               
+  output CLRCIN, 
+  output CLRCOUT,
+  output CDIN,                   
+  output CMCLK,                  //Master Clock to TLV320 
+  output CMODE,                  //sets TLV320 mode - I2C or SPI
+  output nCS,                    //chip select on TLV320
+  output MOSI,                   //SPI data for TLV320
+  output SSCK,                   //SPI clock for TLV320
+  input  CDOUT,                  //Mic data from TLV320  
+  
+  //phy rgmii (KSZ9021RL)
+  output [3:0]PHY_TX,
+  output PHY_TX_EN,              //PHY Tx enable
+  output PHY_TX_CLOCK,           //PHY Tx data clock
+  input  [3:0]PHY_RX,     
+  input  RX_DV,                  //PHY has data flag
+  input  PHY_RX_CLOCK,           //PHY Rx data clock
+  input  PHY_CLK125,             //125MHz clock from PHY PLL
+  input  PHY_INT_N,              //interrupt (n.c.)
+  output PHY_RESET_N,
+  input  CLK_25MHZ,              //25MHz clock (n.c.)  
+  
+	//phy mdio (KSZ9021RL)
+	inout  PHY_MDIO,               //data line to PHY MDIO
+	output PHY_MDC,                //2.5MHz clock to PHY MDIO
+  
+	//eeprom (25AA02E48T-I/OT)
+	output 	SCK, 							// clock on MAC EEPROM
+	output 	SI,							// serial in on MAC EEPROM
+	input   	SO, 							// SO on MAC EEPROM
+	output  	CS,							// CS on MAC EEPROM
+	
+  //eeprom (M25P16VMW6G)  
+  output NCONFIG,                //when high causes FPGA to reload from eeprom EPCS16	
+  
+  //12 bit adc's (ADC78H90CIMT)
+  output ADCMOSI,                
+  output ADCCLK,
+  input  ADCMISO,
+  output nADCCS, 
+ 
+  //alex/apollo spi
+  output SPI_SDO,                //SPI data to Alex or Apollo 
+  input  SPI_SDI,                //SPI data from Apollo 
+  output SPI_SCK,                //SPI clock to Alex or Apollo 
+  output J15_5,                  //SPI Rx data load strobe to Alex / Apollo enable
+  output J15_6,                  //SPI Tx data load strobe to Alex / Apollo ~reset 
+  
+  //misc. i/o
+  input  PTT,                    //PTT active low
+  input  KEY_DOT,                //dot input from J11
+  input  KEY_DASH,               //dash input from J11
+  output FPGA_PTT,               //high turns Q4 on for PTTOUT
+  input  MODE2,                  //jumper J13 on Angelia, 1 if removed
+  input  ANT_TUNE,               //atu
+  output IO1,                    //high to mute AF amp    
+  input  IO2,                    //PTT, used by Apollo 
+  
+  //user digital inputs
+  input  IO4,                    
+  input  IO5,
+  input  IO6,
+  input  IO8,
+  
+  //user outputs
+  output USEROUT0,               
+  output USEROUT1,
+  output USEROUT2,
+  output USEROUT3,
+  output USEROUT4,
+  output USEROUT5,
+  output USEROUT6,
+  
+    //debug led's
+  output Status_LED,      
+  output DEBUG_LED1,             
+  output DEBUG_LED2,
+  output DEBUG_LED3,
+  output DEBUG_LED4,
+  output DEBUG_LED5,
+  output DEBUG_LED6,
+  output DEBUG_LED7,
+  output DEBUG_LED8,
+  output DEBUG_LED9,
+  output DEBUG_LED10,
+  
+	// RAM
+  output wire RAM_A0,
+  output wire RAM_A1,
+  output wire RAM_A2,
+  output wire RAM_A3,
+  output wire RAM_A4,
+  output wire RAM_A5,
+  output wire RAM_A6,
+  output wire RAM_A7,
+  output wire RAM_A8,
+  output wire RAM_A9,
+  output wire RAM_A10,
+  output wire RAM_A11,
+  output wire RAM_A12,
+  output wire RAM_A13  
+);
 
 assign USEROUT0 = IF_OC[0];					
 assign USEROUT1 = IF_OC[1];  				
@@ -338,10 +348,33 @@ assign USEROUT4 = IF_OC[4];
 assign USEROUT5 = IF_OC[5];
 assign USEROUT6 = IF_OC[6];
 
+assign RAND = IF_RAND;
+assign RAND_2 = IF_RAND;
+assign PGA = 0;								// 1 = gain of 3dB, 0 = gain of 0dB
+assign PGA_2 = 0;
+assign DITH = IF_DITHER;
+assign DITH_2 = IF_DITHER;
+assign SHDN = 1'b0;				   		// normal LTC2208 operation
+assign SHDN_2 = 1'b0;
+
 assign NCONFIG = IP_write_done || reset_FPGA;
 
 // enable AF Amp
 assign  IO1 = 1'b0;  						// low to enable, high to mute
+
+parameter M_TPD   = 4;
+parameter IF_TPD  = 2;
+
+parameter  Angelia_version = 8'd21;		// Serial number of this version
+localparam Penny_serialno = 8'd00;		// Use same value as equ1valent Penny code 
+localparam Merc_serialno = 8'd00;		// Use same value as equivalent Mercury code
+
+localparam RX_FIFO_SZ  = 4096; 			// 16 by 4096 deep RX FIFO
+localparam TX_FIFO_SZ  = 1024; 			// 16 by 1024 deep TX FIFO  
+localparam SP_FIFO_SZ  = 16384; 			// 16 by 16,384 deep SP FIFO
+
+localparam read_reg_address = 5'd31; 	// PHY register to read from - gives connect speed and fully duplex	
+
 
 //--------------------------------------------------------------
 // Reset Lines - C122_rst, IF_rst
@@ -390,7 +423,7 @@ assign SPI_clk = spc[2];
 
 wire	Apollo_clk;
 wire 	IF_locked;
-// Generate IF_clk (48MHz), CMCKL (12.288MHz) and Apollo_clk(150kHz*) from 122.88MHz using PLL  *** was 30kHz
+// Generate IF_clk (48MHz), CMCKL (12.288MHz) and Apollo_clk(30kHz) from 122.88MHz using PLL 
 PLL_IF PLL_IF_inst (.inclk0(C122_clk), .c0(IF_clk), .c1(CMCLK), .c2(Apollo_clk), .locked(IF_locked));
 
 //----------------------------PHY Clocks-------------------
@@ -472,6 +505,7 @@ reg IP_valid;					// set when Metis has a valid IP address assigned by DHCP or A
 reg Assigned_IP_valid;		// set if IP address assigned by PC is not 0.0.0.0. or 255.255.255.255
 reg use_IPIPA;					// set when no DHCP or assigned IP available so use APIAP
 reg read_IP_address;			// set when we wish to read IP address from EEPROM
+
 
 always @ (posedge Tx_clock_2)
 begin
@@ -597,7 +631,7 @@ EEPROM EEPROM_inst(.clock(EEPROM_clock), .read_MAC(read_MAC), .read_IP(read_IP_a
 				   .IP_to_write(IP_to_write), .CS(CS), .SCK(SCK), .SI(SI), .SO(SO), .This_MAC(This_MAC),
 				   .This_IP(AssignIP), .MAC_ready(MAC_ready), .IP_ready(IP_ready), .IP_write_done(IP_write_done));				
 					
-								
+					
 //------------------------------------------------------------------------------------
 //  If DHCP provides an IP address for Metis use that else use a random APIPA address
 //------------------------------------------------------------------------------------
@@ -608,7 +642,7 @@ wire [31:0] This_IP;
 wire [31:0]AssignIP;			// IP address read from EEPROM
 
 assign This_IP =  Assigned_IP_valid ? AssignIP : 
-				          use_IPIPA ? {8'd169, 8'd254, This_MAC[15:0]} : YIADDR;
+				              use_IPIPA ? {8'd169, 8'd254, This_MAC[15:0]} : YIADDR;
 
 //----------------------------------------------------------------------------------
 // Read/Write the  PHY MDIO registers (NOTE: Max clock frequency is 2.5MHz)
@@ -770,7 +804,6 @@ wire [47:0]ARP_PC_MAC; 			// MAC address of PC requesting ARP
 wire [31:0]ARP_PC_IP;			// IP address of PC requesting ARP
 wire [47:0]Ping_PC_MAC; 		// MAC address of PC requesting ping
 wire [31:0]Ping_PC_IP;			// IP address of PC requesting ping
-//wire [47:0]IP_PC_MAC;         // IP address of PC requesting/setting IP address
 wire [15:0]Length;				// Lenght of frame - used by ping
 wire data_match;					// for debug use 
 wire PHY_100T_state;				// used as system clock at 100T
@@ -785,14 +818,9 @@ wire erase;							// set when we receive an erase EPCS16 command
 wire erase_ACK;					// set when ASMI interface acks the erase command
 wire [31:0]num_blocks;			// number of 256 byte blocks to save in EPCS16
 wire EPCS_FIFO_enable;			// EPCS fifo write enable
-wire IP_write_done;				// set when IP address has been written to the EEPORM
-//wire write_IP;						// set when request to write IP address received
-wire [31:0]IP_to_write;		   // IP address to write to EEPROM
-//wire read_IP_address;		   // set when we want to read the IP address from the EEPROM
-//wire IP_ready;						// set when IP address is available from the EEPROM
-//wire send_IP;						// set when we want to send the IP address to the PC
-//wire send_IP_ACK;					// set when the IP address has been sent to the PC
-//wire read_IP;						// set when PC requests the IP address from EEPROM
+wire IP_write_done;
+wire [31:0] IP_to_write;
+
 
 
 Rx_MAC Rx_MAC_inst (.PHY_RX_CLOCK(PHY_RX_CLOCK), .PHY_data_clock(PHY_data_clock),.RX_DV(RX_DV), .PHY_RX(PHY_RX),
@@ -819,7 +847,6 @@ Rx_MAC Rx_MAC_inst (.PHY_RX_CLOCK(PHY_RX_CLOCK), .PHY_data_clock(PHY_data_clock)
 wire [10:0] PHY_Tx_rdused;  
 wire LED;
 wire Tx_fifo_rdreq;
-//wire ARP_sent_Tx;
 wire ARP_sent;
 wire  DHCP_discover;
 reg  [7:0] RS232_data;
@@ -858,31 +885,26 @@ reg ping_reply;
 reg ping_sent;
 reg [16:0]times_up;			// time out counter so code wont hang here
 reg [1:0] state;
-//reg disable_ARP_reply;		// to ensure multiple ARP replies do not occur for each ARP request
 
 parameter IDLE = 2'd0,
 			  ARP = 2'd1,
 			 PING = 2'd2;
 
-always @ (posedge Tx_clock/*PHY_RX_CLOCK*/)
+always @ (posedge PHY_RX_CLOCK)
 begin
 	case (state)
 	IDLE: begin
 				times_up   <= 0;
 				Send_ARP   <= 0;
 				ping_reply <= 0;
-				if (ARP_request) /*begin
-					*/state <= ARP;
-					//disable_ARP_reply <= 1'b0;	// prep to send a single ARP reply
-				//end
+				if (ARP_request) state <= ARP;
 				else if (ping_request) state <= PING;
 			end
 	
 	ARP:	begin	
-				/*if (!disable_ARP_reply) */Send_ARP <= 1'b1;		// send an ARP reply
+				Send_ARP <= 1'b1;
 				if (ARP_sent || times_up > 100000) state <= IDLE;
 				times_up <= times_up + 17'd1;
-				//disable_ARP_reply <= 1'b1;		//allow only a single ARP reply for each trip through this ARP case
 			end
 			
 	PING:	begin
@@ -894,6 +916,7 @@ begin
 	default: state = IDLE;
 	endcase
 end
+
 
 
 //----------------------------------------------------
@@ -1011,7 +1034,7 @@ assign sp_data_ready = (sp_delay == 0 && have_sp_data);
 
 	
 //--------------------------------------------------------------------------
-//			EPCS128 Erase and Program code 
+//			EPCS16 Erase and Program code 
 //--------------------------------------------------------------------------
 
 /*
@@ -1099,11 +1122,12 @@ cdc_sync #(16)
  
 */
 
-reg [15:0]temp_ADC[0:NR-1];
+reg [15:0]temp_ADC[0:1];
+reg [15:0] temp_DACD; // for pre-distortion Tx tests
 
 always @ (posedge C122_clk) 
-begin
- 
+begin 
+	 temp_DACD <= {DACD, 2'b00}; // make DACD 16-bits, use high bits for DACD
    if (RAND) begin	// RAND set so de-ramdomize
 		if (INA[0]) temp_ADC[0] <= {~INA[15:1],INA[0]};
 		else temp_ADC[0] <= INA;
@@ -1118,6 +1142,7 @@ begin
 	
 end 
 
+
 //------------------------------------------------------------------------------
 //                 Transfer  Data from IF clock to 122.88MHz clock domain
 //------------------------------------------------------------------------------
@@ -1131,7 +1156,7 @@ wire  signed [15:0] C122_I_PWM;
 wire  signed [15:0] C122_Q_PWM;
 
 cdc_sync #(32)
-	freq0 (.siga(IF_frequency[0]), .rstb(C122_rst), .clkb(C122_clk), .sigb(C122_frequency_HZ_Tx)); // transfer Tx frequency	
+	freq0 (.siga(IF_frequency[0]), .rstb(C122_rst), .clkb(C122_clk), .sigb(C122_frequency_HZ_Tx)); // transfer Tx frequency
 	
 cdc_sync #(32)
 	freq1 (.siga(IF_frequency[1]), .rstb(C122_rst), .clkb(C122_clk), .sigb(C122_frequency_HZ[0])); // transfer Rx1 frequency
@@ -1144,7 +1169,7 @@ cdc_sync #(32)
 
 cdc_sync #(32)
 	freq4 (.siga(IF_frequency[4]), .rstb(C122_rst), .clkb(C122_clk), .sigb(C122_frequency_HZ[3])); // transfer Rx4 frequency
-	
+
 cdc_sync #(32)
 	freq5 (.siga(IF_frequency[5]), .rstb(C122_rst), .clkb(C122_clk), .sigb(C122_frequency_HZ[4])); // transfer Rx5 frequency
 
@@ -1154,12 +1179,11 @@ cdc_sync #(32)
 cdc_sync #(32)
 	freq7 (.siga(IF_frequency[7]), .rstb(C122_rst), .clkb(C122_clk_2), .sigb(C122_frequency_HZ[6])); // transfer Rx7 frequency
 
-
 cdc_sync #(32)
 	LR_audio (.siga({IF_Left_Data,IF_Right_Data}), .rstb(C122_rst), .clkb(C122_clk), .sigb(C122_LR_data)); // transfer Left and Right audio
 
 cdc_sync #(2)
-	rate (.siga({IF_DFS1,IF_DFS0}), .rstb(C122_rst), .clkb(C122_clk), .sigb({C122_DFS1, C122_DFS0})); // sample rate
+	rates (.siga({IF_DFS1,IF_DFS0}), .rstb(C122_rst), .clkb(C122_clk), .sigb({C122_DFS1, C122_DFS0})); // sample rate
 	
 cdc_sync #(16)
     Tx_I  (.siga(IF_I_PWM), .rstb(C122_rst), .clkb(_122MHz), .sigb(C122_I_PWM )); // Tx I data
@@ -1225,6 +1249,9 @@ pulsegen cdc_m   (.sig(IF_CLRCLK), .rst(IF_rst), .clk(IF_clk), .pulse(IF_get_sam
 		64 bit result. Sweet!  However since R is always >= 0 we will use an unsigned B32 result
 */
 
+//------------------------------------------------------------------------------
+//                 All DSP code is in the Receiver module
+//------------------------------------------------------------------------------
 
 localparam NR = 7; // number of receivers to implement
 
@@ -1242,30 +1269,35 @@ wire             strobe [0:NR-1];
 wire		 [31:0] Rx2_phase_word;
 wire  			  IF_IQ_Data_rdy;
 wire 		 [47:0] IF_IQ_Data;
+wire             test_strobe3;
 
-// set the decimation rate 40 = 48k.....20 = 96k
+// set the decimation rate 40 = 48k.....2 = 960k
 	
-	reg [5:0] sampling_rate;
+	reg [5:0] rate;
 	
 	always @ ({C122_DFS1, C122_DFS0})
 	begin 
 		case ({C122_DFS1, C122_DFS0})		
-		0: sampling_rate <= 6'd40; 		//  48ksps 
-		1: sampling_rate <= 6'd20;			//  96ksps
-		2: sampling_rate <= 6'd10;			//  192ksps
-		3: sampling_rate <= 6'd5;			//  384ksps
+		0: rate <= 6'd40; 		//  48ksps 
+		1: rate <= 6'd20;			//  96ksps
+		2: rate <= 6'd10;			//  192ksps
+		3: rate <= 6'd5;			//  384ksps
 		
-		default: sampling_rate <= 6'd40;
+		default: rate <= 6'd40;
 		endcase
 	end 
 
 localparam M2 = 32'd1172812403;  // B57 = 2^57.   M2 = B57/122880000
+localparam M3 = 32'd586406201;   // M3 = M2 / 2, used to round the result
 
 generate
   genvar c;
-  for (c = 0; c < NR; c = c + 1) // calc freq phase word for 7 freqs (Rx1, Rx2..., Rx7)
+  for (c = 0; c < NR; c = c + 1) // calc freq phase word for 4 freqs (Rx1, Rx2, Rx3, Rx4)
    begin: MDC 
-    assign C122_ratio[c] = C122_frequency_HZ[c] * M2; // B0 * B57 number = B57 number
+    //  assign C122_ratio[c] = C122_frequency_HZ[c] * M2; // B0 * B57 number = B57 number
+
+   // Note: We add 1/2 M2 (M3) so that we end up with a rounded 32 bit integer below.
+    assign C122_ratio[c] = C122_frequency_HZ[c] * M2 + M3; // B0 * B57 number = B57 number 
 
     always @ (posedge C122_clk)
     begin
@@ -1275,15 +1307,141 @@ generate
         if (C122_last_freq[c] != C122_frequency_HZ[c]) // frequency changed)
           C122_sync_phase_word[c] <= C122_ratio[c][56:25]; // B57 -> B32 number since R is always >= 0  
       end 		
-    end	 
-  end
-endgenerate
+    end
 
 //assign phase word for Rx2 depending upon whether common_Merc_freq is asserted
 assign Rx2_phase_word = common_Merc_freq ? C122_sync_phase_word[0] : C122_sync_phase_word[1];
+	 
+	cdc_mcp #(48)			// Transfer the receiver data and strobe from C122_clk to IF_clk
+		IQ_sync (.a_data ({rx_I[c], rx_Q[c]}), .a_clk(C122_clk),.b_clk(IF_clk), .a_data_rdy(strobe[c]),
+				.a_rst(C122_rst), .b_rst(IF_rst), .b_data(IF_M_IQ_Data[c]), .b_data_ack(IF_M_IQ_Data_rdy[c]));
+
+/*				
+	receiver receiver_inst(
+	//control
+	.clock(C122_clk),
+	.rate(rate),
+	.frequency(C122_sync_phase_word[c]),
+	.out_strobe(strobe[c]),
+	//input
+	.in_data(temp_ADC),
+	//output
+	.out_data_I(rx_I[c]),
+	.out_data_Q(rx_Q[c]),
+	.test_strobe3(test_strobe3)
+	);
+*/				
+  end
+endgenerate
+
+wire [15:0] select_input;
+assign select_input = FPGA_PTT ?  temp_DACD : temp_ADC[0];
+
+
+receiver receiver_inst0(   // Rx1
+	//control
+	.clock(C122_clk),
+	.rate(rate),
+	.frequency(C122_sync_phase_word[0]),
+	.out_strobe(strobe[0]),
+	//input
+	.in_data(temp_ADC[0]),
+	//output
+	.out_data_I(rx_I[0]),
+	.out_data_Q(rx_Q[0]),
+	.test_strobe3()
+	);
+
+receiver receiver_inst1(	// Rx2
+	//control
+	.clock(C122_clk_2),
+	.rate(rate),
+	.frequency(C122_sync_phase_word[1]),
+	.out_strobe(strobe[1]),
+	//input
+	.in_data(temp_ADC[1]),
+	//output
+	.out_data_I(rx_I[1]),
+	.out_data_Q(rx_Q[1]),
+	.test_strobe3()
+	);
+
+receiver receiver_inst2(	// Rx3
+	//control
+	.clock(C122_clk),
+	.rate(rate),
+	.frequency(C122_sync_phase_word[2]),
+	.out_strobe(strobe[2]),
+	//input
+	.in_data(temp_ADC[0]),
+	//output
+	.out_data_I(rx_I[2]),
+	.out_data_Q(rx_Q[2]),
+	.test_strobe3()
+	);
+
+receiver2 receiver_inst3(	// Rx4 -uses by2 & by4
+	//control
+	.clock(C122_clk),
+	.rate(rate),
+	.frequency(C122_sync_phase_word[3]),
+	.out_strobe(strobe[3]),
+	//input
+	.in_data(temp_ADC[0]),
+	//output
+	.out_data_I(rx_I[3]),
+	.out_data_Q(rx_Q[3]),
+	.test_strobe3()
+	);
+
+	receiver2 receiver_inst4(	// Rx5 - has DAC data on TX and ADC on Rx
+	//control
+	.clock(C122_clk),
+	.rate(rate),
+	.frequency(C122_sync_phase_word_Tx),
+	.out_strobe(strobe[4]),
+	//input
+	.in_data(select_input),
+	//output
+	.out_data_I(rx_I[4]),
+	.out_data_Q(rx_Q[4]),
+	.test_strobe3()
+	);
+
+receiver receiver_inst5(   // Rx6
+	//control
+	.clock(C122_clk_2),
+	.rate(rate),
+	.frequency(C122_sync_phase_word[5]),
+	.out_strobe(strobe[5]),
+	//input
+	.in_data(temp_ADC[1]),
+	//output
+	.out_data_I(rx_I[5]),
+	.out_data_Q(rx_Q[5]),
+	.test_strobe3()
+	);
+
+receiver receiver_inst6(   // Rx7
+	//control
+	.clock(C122_clk_2),
+	.rate(rate),
+	.frequency(C122_sync_phase_word[6]),
+	.out_strobe(strobe[6]),
+	//input
+	.in_data(temp_ADC[1]),
+	//output
+	.out_data_I(rx_I[6]),
+	.out_data_Q(rx_Q[6]),
+	.test_strobe3()
+	);
+
+
 
 // calc frequency phase word for Tx
-assign C122_ratio_Tx = C122_frequency_HZ_Tx * M2;
+//assign C122_ratio_Tx = C122_frequency_HZ_Tx * M2;
+// Note: We add 1/2 M2 (M3) so that we end up with a rounded 32 bit integer below.
+assign C122_ratio_Tx = C122_frequency_HZ_Tx * M2 + M3; 
 
 always @ (posedge C122_clk)
 begin
@@ -1291,139 +1449,11 @@ begin
   begin
     C122_last_freq_Tx <= C122_frequency_HZ_Tx;
 	 if (C122_last_freq_Tx != C122_frequency_HZ_Tx)
-	   C122_sync_phase_word_Tx <= C122_ratio_Tx[56:25];
+	  C122_sync_phase_word_Tx <= C122_ratio_Tx[56:25];
   end
 end
 
-genvar i;
-generate
-  for (i=0; i<NR; i=i+1)
-    begin: receivers
-/*	 receiver receiver_inst0(
-	   //control
-	   .clock(C122_clk),
-	   .rate({C122_DFS1, C122_DFS0}), //00=48, 01=96, 10=192 kHz
-	   .frequency(C122_sync_phase_word[0]), //force all rcvrs to rx1 freq
-	   .out_strobe(strobe[i]),		
-	   //input
-	   .in_data(temp_ADC[i]),		
-	   //output
-	   .out_data_I(rx_I[i]),
-	   .out_data_Q(rx_Q[i])
-	   );
-		
-*/		
-    // Transfer the receiver data and strobe from C122_clk to IF_clk
-    cdc_mcp #(48)
-	    IQ_sync (.a_data ({rx_I[i], rx_Q[i]}), .a_clk(C122_clk),.b_clk(IF_clk), .a_data_rdy(strobe[i]),
-		   .a_rst(C122_rst), .b_rst(IF_rst), .b_data(IF_M_IQ_Data[i]), .b_data_ack(IF_M_IQ_Data_rdy[i]));
-			
-			
-/*    // transfer Rx frequency	
-    cdc_sync #(32)
-    freq (.siga(IF_frequency[i+1]), .rstb(C122_rst), .clkb(C122_clk), .sigb(C122_frequency_HZ[i])); 
-*/
-    end
-endgenerate
 
-
- // receiver 1, uses ADC 1
- receiver receiver_inst0(
-	   //control
-	   .clock(C122_clk),
-	   .rate(sampling_rate), 
-	   .frequency(C122_sync_phase_word[0]),
-	   .out_strobe(strobe[0]),		
-	   //input
-	   .in_data(temp_ADC[0]),		
-	   //output
-	   .out_data_I(rx_I[0]),
-	   .out_data_Q(rx_Q[0]),
-	   );
-
-// receiver 2, uses ADC 2 and Rx 2 phase word
-	 receiver receiver_inst1(
-	   //control
-	   .clock(C122_clk_2),
-	   .rate(sampling_rate),
-	   .frequency(Rx2_phase_word),
-	   .out_strobe(strobe[1]),		
-	   //input
-	   .in_data(temp_ADC[1]),		
-	   //output
-	   .out_data_I(rx_I[1]),
-	   .out_data_Q(rx_Q[1])
-	   );
-
-//receiver 3, uses ADC 1
-	 receiver receiver_inst2(
-	   //control
-	   .clock(C122_clk),
-	   .rate(sampling_rate),
-	   .frequency(C122_sync_phase_word[2]),
-	   .out_strobe(strobe[2]),		
-	   //input
-	   .in_data(temp_ADC[0]),		
-	   //output
-	   .out_data_I(rx_I[2]),
-	   .out_data_Q(rx_Q[2])
-	   );
-
-// receiver 4, uses ADC 1 until Gigabit ethernet ops are implemented
-	 receiver receiver_inst3(
-	   //control
-	   .clock(C122_clk),
-	   .rate(sampling_rate),
-	   .frequency(C122_sync_phase_word[3]),
-	   .out_strobe(strobe[3]),		
-	   //input
-	   .in_data(temp_ADC[0]),		
-	   //output
-	   .out_data_I(rx_I[3]),
-	   .out_data_Q(rx_Q[3])
-	   );
-
-// receiver 5, uses ADC 1
-	 receiver receiver_inst4(
-	   //control
-	   .clock(C122_clk),
-	   .rate(sampling_rate),
-	   .frequency(C122_sync_phase_word[4]),
-	   .out_strobe(strobe[4]),		
-	   //input
-	   .in_data(temp_ADC[0]),		
-	   //output
-	   .out_data_I(rx_I[4]),
-	   .out_data_Q(rx_Q[4])
-	   );
-
-// receiver 6, uses ADC 2
-	 receiver receiver_inst5(
-	   //control
-	   .clock(C122_clk_2),
-	   .rate(sampling_rate),
-	   .frequency(C122_sync_phase_word[5]),
-	   .out_strobe(strobe[5]),		
-	   //input
-	   .in_data(temp_ADC[1]),		
-	   //output
-	   .out_data_I(rx_I[5]),
-	   .out_data_Q(rx_Q[5])
-	   );
-
-// receiver 7, uses ADC 1
-	 receiver receiver_inst6(
-	   //control
-	   .clock(C122_clk_2),
-	   .rate(sampling_rate),
-	   .frequency(C122_sync_phase_word[6]),
-	   .out_strobe(strobe[6]),		
-	   //input
-	   .in_data(temp_ADC[1]),		
-	   //output
-	   .out_data_I(rx_I[6]),
-	   .out_data_Q(rx_Q[6])
-	   );
 
 //---------------------------------------------------------
 //    ADC SPI interface 
@@ -1495,8 +1525,8 @@ Apollo Apollo_inst(
 	.status(ApolloStatusBytes),					// Status bytes from Apollo.  currently unused.  Some day send some to PC via C&C bytes.
 	.FilterSelect(FilterSelect)
 	);
-
 	
+				   
 //---------------------------------------------------------
 //                 Transmitter code 
 //---------------------------------------------------------	
@@ -1535,29 +1565,55 @@ Apollo Apollo_inst(
 	0.61 * 0.9921875 * 0.41174 * 4 = 0.996798
 	
 
-*/				   
+*/	
+
+reg signed [15:0]C122_fir_i;
+reg signed [15:0]C122_fir_q;
+
+// latch I&Q data on strobe from FIR
+always @ (posedge _122MHz)
+begin 
+	if (req1) begin 
+		C122_fir_i = C122_I_PWM;
+		C122_fir_q = C122_Q_PWM;	
+	end 
+end 
+
+
+// Interpolate I/Q samples from 48 kHz to the clock frequency
+
+wire req1, req2;
+wire [19:0] y1_r, y1_i; 
+wire [15:0] y2_r, y2_i;
+
+FirInterp8_1024 fi (_122MHz, req2, req1, C122_fir_i, C122_fir_q, y1_r, y1_i);  // req2 enables an output sample, req1 requests next input sample.
+
+CicInterpM5 #(.RRRR(320), .IBITS(20), .OBITS(16), .GBITS(34)) in2 ( _122MHz, 1'd1, req2, y1_r, y1_i, y2_r, y2_i);
+
+
+			   
 
 //---------------------------------------------------------
 //  Interpolating CIC filter  R = 2560  N = 5
 //---------------------------------------------------------
-
-wire signed [15:0] C122_cic_out_i;
-wire signed [15:0] C122_cic_out_q;
-
-cicint cic_I(.clk(_122MHz), .clk_enable(1'b1), .reset(C122_rst), .filter_in(C122_cic_i),
-             .filter_out(C122_cic_out_i), .ce_out(C122_ce_out_i));
-             
-cicint cic_Q(.clk(_122MHz), .clk_enable(1'b1), .reset(C122_rst), .filter_in(C122_cic_q),
-             .filter_out(C122_cic_out_q), .ce_out(C122_ce_out_q));
-             
-
-// multiply CIC outputs by 0.9921875, >>> is the Verilog arithmetic shift right
-    
-wire signed [15:0] C122_out_i;
-wire signed [15:0] C122_out_q;   
-
-assign C122_out_i = C122_cic_out_i - (C122_cic_out_i >>> 7);
-assign C122_out_q = C122_cic_out_q - (C122_cic_out_q >>> 7);
+//
+//wire signed [15:0] C122_cic_out_i;
+//wire signed [15:0] C122_cic_out_q;
+//
+//cicint cic_I(.clk(_122MHz), .clk_enable(1'b1), .reset(C122_rst), .filter_in(C122_cic_i),
+//             .filter_out(C122_cic_out_i), .ce_out(C122_ce_out_i));
+//             
+//cicint cic_Q(.clk(_122MHz), .clk_enable(1'b1), .reset(C122_rst), .filter_in(C122_cic_q),
+//             .filter_out(C122_cic_out_q), .ce_out(C122_ce_out_q));
+//             
+//
+//// multiply CIC outputs by 0.9921875, >>> is the Veriloig arithmetic  shift right
+//    
+//wire signed [15:0] C122_out_i;
+//wire signed [15:0] C122_out_q;   
+//
+//assign C122_out_i = C122_cic_out_i - (C122_cic_out_i >>> 7);
+//assign C122_out_q = C122_cic_out_q - (C122_cic_out_q >>> 7);
 
 //---------------------------------------------------------
 //    CORDIC NCO 
@@ -1573,8 +1629,8 @@ wire signed [15:0] Q;
 
 // if in VNA mode use the Rx[0] phase word for the Tx
 assign C122_phase_word_Tx = VNA ? C122_sync_phase_word[0] : C122_sync_phase_word_Tx;
-assign                  I = VNA ? 16'd19274 : C122_out_q;   	// select VNA mode if active. Set CORDIC for max DAC output
-assign                  Q = VNA ? 0 : C122_out_i; 					// taking into account CORDICs gain i.e. 0x7FFF/1.7
+assign                  I = VNA ? 16'd19274 : y2_i;   	// select VNA mode if active. Set CORDIC for max DAC output
+assign                  Q = VNA ? 0 : y2_r; 					// taking into account CORDICs gain i.e. 0x7FFF/1.7
 
 
 // NOTE:  I and Q inputs reversed to give correct sideband out 
@@ -1632,7 +1688,7 @@ wire   [63:0] IF_tx_IQ_mic_data;
 reg           IF_tx_IQ_mic_rdy;
 wire   [15:0] IF_mic_Data;
 wire    [2:0] IF_chan;
-wire    [2:0] IF_last_chan;
+reg    [2:0] IF_last_chan;
 wire     [47:0] IF_chan_test;
 
 always @*
@@ -1679,12 +1735,14 @@ assign RX_USED = {IF_Rx_fifo_full,IF_Rx_fifo_used};
 
 assign Penny_ALC = AIN5; 
 
+wire VNA_start = VNA && IF_Rx_save && (IF_Rx_ctrl_0[7:1] == 7'b0000_001);  // indicates a frequency change for the VNA.
+
 Angelia_Tx_fifo_ctrl #(RX_FIFO_SZ, TX_FIFO_SZ) TXFC 
            (IF_rst, IF_clk, IF_tx_fifo_wdata, IF_tx_fifo_wreq, IF_tx_fifo_full,
             IF_tx_fifo_used, IF_tx_fifo_clr, IF_tx_IQ_mic_rdy,
             IF_tx_IQ_mic_data, IF_chan, IF_last_chan, clean_dash, clean_dot, clean_PTT_in, OVERFLOW,
             Penny_serialno, Merc_serialno, Angelia_version, Penny_ALC, AIN1, AIN2,
-            AIN3, AIN4, AIN6, IO4, IO5, IO6, IO8);
+            AIN3, AIN4, AIN6, IO4, IO5, IO6, IO8, VNA_start, VNA);
 
 //------------------------------------------------------------------------
 //   Tx_fifo  (1024 words) Dual clock FIFO - Altera Megafunction (dcfifo)
@@ -1936,7 +1994,7 @@ assign  IF_PHY_drdy = have_room & ~IF_PHY_rdempty;
 	Decode Rx_1_out relay settigs on Alex, when IF_Rx_ctrl_0[7:1] = 0, IF_Rx_ctrl_3[7] indicates the following
 
 	1 = Rx_1_out on 
-	
+
 	When IF_Rx_ctrl_0[7:1] == 7'b0001_010 decodes as follows:
 	
 	IF_Line_In_Gain		<= IF_Rx_ctrl2[4:0]	// decode 5-bit line gain setting
@@ -1948,7 +2006,7 @@ reg         IF_mode;     			// normal or Class E PA operation
 reg         IF_RAND;     			// when set randomizer in ADCon
 reg         IF_DITHER;   			// when set dither in ADC on
 reg   [1:0] IF_ATTEN;    			// decode attenuator setting on Alex
-reg         Preamp;					// selects input attenuator setting, 1 = 20dB, 0 = 0dB
+reg         Preamp;					// selects input attenuator setting, 0 = 20dB, 1 = 0dB (preamp ON)
 reg   [1:0] IF_TX_relay; 			// Tx relay setting on Alex
 reg         IF_Rout;     			// Rx1 out on Alex
 reg   [1:0] IF_RX_relay; 			// Rx relay setting on Alex 
@@ -1968,9 +2026,8 @@ reg         Alex_6m_preamp; 		// set if manual selection and 6m preamp selected
 reg   [6:0] Alex_manual_LPF;		// Alex LPF relay selection in manual mode
 reg   [5:0] Alex_manual_HPF;		// Alex HPF relay selection in manual mode
 reg   [4:0] Angelia_atten;			// 0-31 dB Heremes attenuator value
-reg			atten_enable; 			// enable/disable control for input attenuator 1
-reg			TR_relay_disable;		// Alex TR relay disable (0 = TR relay enabled, 1 = TR relay disabled)
-//reg			Angelia_atten_select; // select between attenuator for ADC1 or ADC2 (0 = ADC1 atten, 1 = ADC2 atten)
+reg			Angelia_atten_enable; // enable/disable bit for Angelia attenuator
+reg			TR_relay_disable;		// Alex T/R relay disable option
 reg	[4:0] Angelia_atten2;		// attenuation setting for input attenuator 2 (input atten for ADC2), 0-31 dB
 reg			atten2_enable; 		//enable/disable control for input attenuator 2 (0=disabled, 1= enabled)
 
@@ -1990,18 +2047,17 @@ begin
     IF_RAND            <= 1'b0;    	// decode randomizer on or off
     IF_RX_relay        <= 2'b0;    	// decode Alex Rx relays
     IF_Rout            <= 1'b0;    	// decode Alex Rx_1_out relay
-	 TR_relay_disable	  <= 1'b0;		// decode Alex TR relay disable
+	 TR_relay_disable   <= 1'b0;     // decode Alex T/R relay disable
     // RX_CONTROL_4
     IF_TX_relay        <= 2'b0;    	// decode Alex Tx Relays
     IF_duplex          <= 1'b0;    	// not in duplex mode
 	 IF_last_chan       <= 3'b000;  	// default single receiver
-	 common_Merc_freq   <= 1'b0;		// default independent freq control for Rx2
     IF_Mic_boost       <= 1'b0;    	// mic boost off 
     IF_Drive_Level     <= 8'b0;	   // drive at minimum
 	 IF_Line_In			  <= 1'b0;		// select Mic input, not Line in
 	 IF_Filter			  <= 1'b0;		// Apollo filter disabled (bypassed)
 	 IF_Tuner			  <= 1'b0;		// Apollo tuner disabled (bypassed)
-	 IF_autoTune		  <= 1'b0;		// Apollo auto-tune disabled
+	 IF_autoTune	     <= 1'b0;		// Apollo auto-tune disabled
 	 IF_Apollo			  <= 1'b0;     //	Alex selected		
 	 VNA					  <= 1'b0;		// VNA disabled
 	 Alex_manual		  <= 1'b0; 	  	// default manual Alex filter selection (0 = auto selection, 1 = manual selection)
@@ -2010,10 +2066,10 @@ begin
 	 Alex_manual_LPF	  <= 7'b0;		// default manual settings, no Alex LPF filters selected
 	 IF_Line_In_Gain	  <= 5'b0;		// default line-in gain at min
 	 Angelia_atten		  <= 5'b0;		// default zero input attenuation
-	 atten_enable 		  <= 1'b0;     // default disable Angelia attenuator 1
-	 //Angelia_atten_select <= 1'b0; 	// default input attenuator is ADC1
+	 Angelia_atten_enable <= 1'b0;    // default disable Angelia attenuator
 	 Angelia_atten2		<= 5'b0;		// default attenuation setting for input attenuator 2 (input atten for ADC2)
 	 atten2_enable 		<= 1'b0;		// default disable input attenuator 2 
+	
   end
   else if (IF_Rx_save) 					// all Rx_control bytes are ready to be saved
   begin 										// Need to ensure that C&C data is stable 
@@ -2026,7 +2082,7 @@ begin
       IF_OC               <= IF_Rx_ctrl_2[7:1]; // decode open collectors on Penelope
       // RX_CONTROL_3
       IF_ATTEN            <= IF_Rx_ctrl_3[1:0]; // decode Alex attenuator setting 
-      Preamp              <= IF_Rx_ctrl_3[2];  // decode Preamp (Attenuator)  1 = On, 0 = Off
+      Preamp              <= IF_Rx_ctrl_3[2];  // decode Preamp (Attenuator)  1 = On (0dB atten), 0 = Off (20dB atten)
       IF_DITHER           <= IF_Rx_ctrl_3[3];   // decode dither on or off
       IF_RAND             <= IF_Rx_ctrl_3[4];   // decode randomizer on or off
       IF_RX_relay         <= IF_Rx_ctrl_3[6:5]; // decode Alex Rx relays
@@ -2050,22 +2106,21 @@ begin
 	  VNA					  <= IF_Rx_ctrl_2[7];		// 1 = enable VNA mode
 	  Alex_manual_HPF	  <= IF_Rx_ctrl_3[5:0];		// Alex HPF filters select
 	  Alex_6m_preamp	  <= IF_Rx_ctrl_3[6];		// 6M low noise amplifier (0 = disable, 1 = enable)
-	  TR_relay_disable  <= IF_Rx_ctrl_3[7];		// Alex TR relay disable (0=TR relay enabled, 1=TR relay disabled)
+	  TR_relay_disable  <= IF_Rx_ctrl_3[7];		// Alex T/R relay disable option (0=TR relay enabled, 1=TR relay disabled)
 	  Alex_manual_LPF	  <= IF_Rx_ctrl_4[6:0];		// Alex LPF filters select	  
-	end 
+	end
 	if (IF_Rx_ctrl_0[7:1] == 7'b0001_010)
 	begin
 	  IF_Line_In_Gain   <= IF_Rx_ctrl_2[4:0];		// decode line-in gain setting
-	  Angelia_atten     <= IF_Rx_ctrl_4[4:0];   	// decode input attenuation setting
-	  atten_enable 	  <= IF_Rx_ctrl_4[5];   	// decode Angelia attenuator 1 enable/disable
-	  //Angelia_atten_select <= IF_Rx_ctrl_4[6];   // decode input attenuator selection (0 = ADC1, 1 = ADC2)
+	  Angelia_atten      <= IF_Rx_ctrl_4[4:0];    // decode input attenuation setting
+	  Angelia_atten_enable <= IF_Rx_ctrl_4[5];    // decode Angelia attenuator enable/disable
 	end
  	if (IF_Rx_ctrl_0[7:1] == 7'b0001_011)
 	begin
 	  Angelia_atten2   	<= IF_Rx_ctrl_1[4:0];	// attenuation setting for input attenuator 2 (input atten for ADC2)
 	  atten2_enable 	   <= IF_Rx_ctrl_1[5];		// input attenuator 2 enable/disable (0=disabled, 1= enabled)
 	end
- end
+  end
 end	
 
 always @ (posedge IF_clk)
@@ -2095,7 +2150,7 @@ begin
 				IF_frequency[1] <= IF_frequency[0];				  
          else
 				IF_frequency[1] <= {IF_Rx_ctrl_1, IF_Rx_ctrl_2, IF_Rx_ctrl_3, IF_Rx_ctrl_4}; 
-			end
+		end
 
 		if (IF_Rx_ctrl_0[7:1] == 7'b0000_011) begin // decode Rx2 frequency
 			if (IF_last_chan >= 3'b001) IF_frequency[2] <= {IF_Rx_ctrl_1, IF_Rx_ctrl_2, IF_Rx_ctrl_3, IF_Rx_ctrl_4};  // Rx2 frequency
@@ -2126,7 +2181,9 @@ begin
 			if (IF_last_chan >= 3'b110) IF_frequency[7] <= {IF_Rx_ctrl_1, IF_Rx_ctrl_2, IF_Rx_ctrl_3, IF_Rx_ctrl_4};  // Rx7 frequency
 			else IF_frequency[7] <= IF_frequency[0];  
 		end 
-	
+		
+		 
+//--------------------------------------------------------------------------------------------------------
  end
 end
 
@@ -2141,7 +2198,7 @@ assign FPGA_PTT = IF_Rx_ctrl_0[0]; // IF_Rx_ctrl_0 only updated when we get corr
 wire [4:0] atten_data_in;
 wire [4:0] atten2_data_in;
 
-assign atten_data_in = atten_enable ? Angelia_atten : (Preamp ? 5'b0_0000 : 5'b1_0100);
+assign atten_data_in = Angelia_atten_enable ? Angelia_atten : (Preamp ? 5'b0_0000 : 5'b1_0100);
 assign atten2_data_in = atten2_enable ? Angelia_atten2 : 5'b0_0000;
 	
 Attenuator Attenuator_ADC1 (.clk(IF_clk), .data(atten_data_in), .ATTN_CLK(ATTN_CLK), .ATTN_DATA(ATTN_DATA), .ATTN_LE(ATTN_LE));
@@ -2306,7 +2363,6 @@ wire        C122_TR_relay;
 wire [15:0] C122_Alex_Tx_data;
 wire [15:0] C122_Alex_Rx_data;
 
-
 // assign attenuators
 wire C122_10dB_atten = IF_ATTEN[0];
 wire C122_20dB_atten = IF_ATTEN[1];
@@ -2345,11 +2401,10 @@ assign C122_Alex_data = {C122_Alex_Tx_data[15:0], C122_Alex_Rx_data[15:0]};
 
 // should move Alex data into SPI_clk domain, but since it changes slowly should be OK for now. 
 
-SPI_Alex Alex_SPI_Tx (.Alex_data(C122_Alex_data), .SPI_data(Alex_SPI_SDO),
+SPI Alex_SPI_Tx (.Alex_data(C122_Alex_data), .SPI_data(Alex_SPI_SDO),
                  .SPI_clock(Alex_SPI_SCK), .Tx_load_strobe(SPI_TX_LOAD),
                  .Rx_load_strobe(SPI_RX_LOAD), .spi_clock(SPI_clk));	
 
-					  
 //---------------------------------------------------------
 //   State Machine to manage PWM interface
 //---------------------------------------------------------
@@ -2502,14 +2557,15 @@ debounce de_dash(.clean_pb(clean_dash), .pb(~KEY_DASH), .clk(IF_clk));
 
 wire ref_80khz; 
 wire osc_80khz;
+ 
 
 // Use a PLL to divide 10MHz clock to 80kHz
 C10_PLL PLL2_inst (.inclk0(OSC_10MHZ), .c0(ref_80khz), .locked());
 
-// Use a PLL to divide 122.88MHz clock to 80kHz								
+// Use a PLL to divide 122.88MHz clock to 80kHz	as backup in case 10MHz source is not present							
 C122_PLL PLL_inst (.inclk0(_122MHz), .c0(osc_80khz), .locked());	
 	
-// Apply to EXOR phase detector 
+//Apply to EXOR phase detector 
 assign FPGA_PLL = ref_80khz ^ osc_80khz; 
 
 //-----------------------------------------------------------
@@ -2550,9 +2606,6 @@ Led_flash Flash_LED2(.clock(IF_clk), .signal(this_MAC), .LED(DEBUG_LED2), .perio
 // flash LED3 for ~0.2 seconds when we have detected a received sequence error or ASMI is busy
 Led_flash Flash_LED3(.clock(IF_clk), .signal(seq_error || busy), .LED(DEBUG_LED3), .period(half_second)); 
 
-// flash LED7 for ~0.2 seconds whenever we detect a ping request
-//Led_flash Flash_LED7(.clock(IF_clk), .signal(ping_request), .LED(DEBUG_LED3), .period(half_second));
-
 // flash LED5 for ~ 0.2 second whenever the PHY gets data
 Led_flash Flash_LED5(.clock(IF_clk), .signal(RX_DV), .LED(DEBUG_LED5), .period(half_second)); 	
 
@@ -2572,6 +2625,8 @@ Led_flash Flash_LED10(.clock(IF_clk), .signal(METIS_discover_sent), .LED(DEBUG_L
 reg [26:0]HB_counter;
 always @(posedge PHY_CLK125) HB_counter = HB_counter + 1'b1;
 assign Status_LED = HB_counter[25];  // Blink
+
+
 
 //------------------------------------------------------------
 //   Multi-state LED Control   - code in Led_control is for active LOW LEDs

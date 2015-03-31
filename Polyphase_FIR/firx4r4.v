@@ -23,32 +23,24 @@
 // Modified for use with HPSDR and DC spur removed by Phil Harman, VK6APH, (C) 2013
 
 
-// This is a decimate by 8 Polyphase FIR filter. Since it decimates by 8 the output signal
-// level will be 1/8 the input level.  The filter coeficients are distributed between the 8 
-// FIR filters such that the first FIR receives coeficients 0, 7, 15... the second 1, 8, 16.. the 
-// third 2, 9, 17.. etc.  The coeficients are calculated as per normal but there is no need to 
-// compensate for the sinx/x shape of the preceeding CIC filters. This is because the filter 
-// decimates by 8 and the droop of the CIC at 1/8th its fs/2 is neglibible. 
-// The filter coefficients are in the file "coefL8.txt". This is split into 8 individual 
-// Quartus ROM *.mif files.
+// This is a decimate by 4 Polyphase FIR filter. Since it decimates by 4 the output signal
+// level will be 1/4 the input level.  The filter coeficients are distributed between the 4 
+// FIR filters such that the first FIR receives coeficients 0, 4, 8... the second 1, 5, 9.. the 
+// third 2, 6, 10.. etc.  The coeficients are calculated as per normal but there is no need to 
+// compensate for the sinx/x shape of the preceeding CIC filters. This is because the  cascaded 
+// filteres decimates by 8 and the droop of the CIC at 1/8th its fs/2 is neglibible. 
+// The filter coefficients are in the files "coefA.mif", "coefB.mif", "coefC.mif" and "coefD.mif".
 
-// The filter coefficients are also attenuated such that the result of the multiply and accumalate 
-// does not exceed 24 bits. 
+// The filter coefficients are normalised such that the largest coefficient = 2^17 - 1.
 
-// Note: Gain is higher than previous filter code by 6dB so reduce outside this module.
-// FIR filters
-//
-// ROM init file:		REQUIRED, with 256 or 512 coefficients.  See below.
+// ROM init files:	REQUIRED, with 256 or 512 coefficients.  See below.
 // Number of taps:	NTAPS.
 // Input bits:			18 fixed.
 // Output bits:		OBITS, default 24.
 // Adder bits:			ABITS, default 24.
 
-// This requires eight MifFile's.
-// Maximum NTAPS is 8 * (previous and current decimation) less overhead.
-// Maximum NTAPS is 2048 (or less).
 
-module firX8R8 (	
+module firX4R4 (	
 	input clock,
 	input x_avail,									// new sample is available
 	input signed [MBITS-1:0] x_real,			// x is the sample input
@@ -61,22 +53,22 @@ module firX8R8 (
 	localparam MBITS	= 18;						// multiplier bits == input bits	
 	
 	parameter
-		TAPS 			= NTAPS / 8,				// Must be even by 8
+		TAPS 			= NTAPS / 4,				// Must be even by 4
    	ABITS			= 24,							// adder bits
 		OBITS			= 24,							// output bits
-		NTAPS			= 976;						// number of filter taps, even by 8	
+		NTAPS			= 128;						// number of filter taps, even by 4	
 	
 	reg [4:0] wstate;								// state machine for write samples
 	
 	reg  [ADDRBITS-1:0] waddr;					// write sample memory address
-	wire weA, weB, weC, weD, weE, weF, weG, weH;
+	wire weA, weB, weC, weD;
 	reg  signed [ABITS-1:0] Racc, Iacc;
-	wire signed [ABITS-1:0] RaccA, RaccB, RaccC, RaccD, RaccE, RaccF, RaccG, RaccH;
-	wire signed [ABITS-1:0] IaccA, IaccB, IaccC, IaccD, IaccE, IaccF, IaccG, IaccH;	
+	wire signed [ABITS-1:0] RaccA, RaccB, RaccC, RaccD;
+	wire signed [ABITS-1:0] IaccA, IaccB, IaccC, IaccD;	
 	
-// Output is the result of adding 8 by 24 bit results so Racc and Iacc need to be 
-// 24 + log2(8) = 24 + 3 = 27 bits wide to prevent DC spur.
-// However, since we decimate by 8 the output will be 1/8 the input. Hence we 
+// Output is the result of adding 4 by 24 bit results so Racc and Iacc need to be 
+// 24 + log2(4) = 24 + 2 = 26 bits wide to prevent DC spur.
+// However, since we decimate by 4 the output will be 1/4 the input. Hence we 
 // use 24 bits for the Accumulators. 
 
 	assign y_real = Racc[ABITS-1:0];  
@@ -90,8 +82,8 @@ module firX8R8 (
 	
 	always @(posedge clock)
 	begin
-		if (wstate == 8) wstate <= wstate + 1'd1;	// used to set y_avail
-		if (wstate == 9) begin
+		if (wstate == 4) wstate <= wstate + 1'd1;	// used to set y_avail
+		if (wstate == 5) begin
 			wstate <= 0;									// reset state machine and increment RAM write address
 			waddr <= waddr + 1'd1;
 		end
@@ -115,22 +107,6 @@ module firX8R8 (
 						Racc <= Racc + RaccD;		
 						Iacc <= Iacc + IaccD;
 					end
-				4:	begin
-						Racc <= Racc + RaccE;		
-						Iacc <= Iacc + IaccE;
-					end
-				5:	begin
-						Racc <= Racc + RaccF;		
-						Iacc <= Iacc + IaccF;
-					end
-				6:	begin
-						Racc <= Racc + RaccG;		
-						Iacc <= Iacc + IaccG;
-					end
-				7: begin										// wait for the last x input
-						Racc <= Racc + RaccH;
-						Iacc <= Iacc + IaccH;
-					end
 			endcase
 		end
 	end
@@ -141,34 +117,27 @@ module firX8R8 (
 	assign weB 		= (x_avail && wstate == 1);
 	assign weC 		= (x_avail && wstate == 2);
 	assign weD 		= (x_avail && wstate == 3);
-	assign weE 		= (x_avail && wstate == 4);
-	assign weF 		= (x_avail && wstate == 5);
-	assign weG 		= (x_avail && wstate == 6);
-	assign weH 		= (x_avail && wstate == 7);
+
 	
 	// at end of sequence indicate new data is available
-	assign y_avail = (wstate == 8);
+	assign y_avail = (wstate == 4);
 
-	fir256 #("coefL8A.mif", ABITS, TAPS) A (clock, waddr, weA, x_real, x_imag, RaccA, IaccA);
-	fir256 #("coefL8B.mif", ABITS, TAPS) B (clock, waddr, weB, x_real, x_imag, RaccB, IaccB);
-	fir256 #("coefL8C.mif", ABITS, TAPS) C (clock, waddr, weC, x_real, x_imag, RaccC, IaccC);
-	fir256 #("coefL8D.mif", ABITS, TAPS) D (clock, waddr, weD, x_real, x_imag, RaccD, IaccD);
-	fir256 #("coefL8E.mif", ABITS, TAPS) E (clock, waddr, weE, x_real, x_imag, RaccE, IaccE);
-	fir256 #("coefL8F.mif", ABITS, TAPS) F (clock, waddr, weF, x_real, x_imag, RaccF, IaccF);
-	fir256 #("coefL8G.mif", ABITS, TAPS) G (clock, waddr, weG, x_real, x_imag, RaccG, IaccG);
-	fir256 #("coefL8H.mif", ABITS, TAPS) H (clock, waddr, weH, x_real, x_imag, RaccH, IaccH);
-	
+	fir256a #("coefA.mif", ABITS, TAPS) A (clock, waddr, weA, x_real, x_imag, RaccA, IaccA);
+	fir256a #("coefB.mif", ABITS, TAPS) B (clock, waddr, weB, x_real, x_imag, RaccB, IaccB);
+	fir256a #("coefC.mif", ABITS, TAPS) C (clock, waddr, weC, x_real, x_imag, RaccC, IaccC);
+	fir256a #("coefD.mif", ABITS, TAPS) D (clock, waddr, weD, x_real, x_imag, RaccD, IaccD);
+
 endmodule
 
 
 // This filter waits until a new sample is written to memory at waddr.  Then
 // it starts by multiplying that sample by coef[0], the next prior sample
-// by coef[1], (etc.) and accumulating.  For R=8 decimation, coef[1] is the
-// coeficient 8 prior to coef[0].
+// by coef[1], (etc.) and accumulating.  For R=4 decimation, coef[1] is the
+// coeficient 4 prior to coef[0].
 // When reading from the RAM we need to allow 3 clock pulses from presenting the 
 // read address until the data is available. 
 
-module fir256(
+module fir256a(
 
 	input clock,
 	input [ADDRBITS-1:0] waddr,							// memory write address
@@ -179,12 +148,12 @@ module fir256(
 	output reg signed [ABITS-1:0] Iaccum
 	);
 
-	localparam ADDRBITS	= 8;								// Address bits for 18/36 X 256 rom/ram blocks
+	localparam ADDRBITS	= 8;						// Address bits for 18/36 X 256 rom/ram blocks
 	localparam MBITS		= 18;								// multiplier bits == input bits
 	
 	parameter MifFile	= "xx.mif";							// ROM coefficients
 	parameter ABITS	= 0;									// adder bits
-	parameter TAPS		= 0;									// number of filter taps, max 2**ADDRBITS
+	parameter TAPS		= 0;									// number of filter taps, max 2^ADDRBITS
 
 	reg [ADDRBITS-1:0] raddr, caddr;						// read address for sample and coef
 	wire [MBITS*2-1:0] q;									// I/Q sample read from memory
@@ -199,20 +168,18 @@ module fir256(
 	assign q_real = reg_q[MBITS*2-1:MBITS];
 	assign q_imag = reg_q[MBITS-1:0];
 
-	firromH #(MifFile) rom (caddr, clock, coef);		// coefficient ROM 18 X 256
+	firromH #(MifFile) rom (caddr, clock, coef);		// coefficient ROM 18 X 32
 	firram36 ram (clock, {x_real, x_imag}, raddr, waddr, we, q);  	// sample RAM 36 X 256;  36 bit == 18 bits I and 18 bits Q
 	
 	always @(posedge clock)
 	begin
 		if (we)		// Wait until a new sample is written to memory
 			begin
-				counter = TAPS[ADDRBITS:0] + 4;			// count samples and pipeline latency (delay of 3 clocks from address being presented)
-				raddr = waddr;									// read address -> newest sample
+				counter <= TAPS[ADDRBITS:0] + 4;			// count samples and pipeline latency (delay of 3 clocks from address being presented)
+				raddr <= waddr;								// read address -> newest sample
 				caddr = 1'd0;									// start at coefficient zero
 				Raccum <= 0;
 				Iaccum <= 0;
-				Rmult <= 0;
-				Imult <= 0;
 			end
 		else
 			begin		// main pipeline here

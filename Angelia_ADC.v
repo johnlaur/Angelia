@@ -24,7 +24,7 @@
 
 //  SCI inteface to ADC78H90 
 
-//  Angelia uses inputs AIN1 to AIN6
+//  Hermes uses inputs AIN1 to AIN6
 //  SCLK can run at 8MHz max and is = clock/4 
 //  Note: AINx data can be latched using nCS
 //  IMPORTANT:  When using multiple addresses the data returned while the current address is 

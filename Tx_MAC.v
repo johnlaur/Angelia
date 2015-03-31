@@ -147,10 +147,10 @@ input  [47:0]DHCP_MAC;			// MAC address of DHCP server
 input  DHCP_request_renew;		// set when renew required
 input  erase_done;				// set when we what to tell the PC we have completed the EPCS16 erase
 input  send_more;					// set when we want the next block of 256 bytes for the EPCS16
-input  [7:0]Angelia_version;		// Angelia code version
+input  [7:0]Angelia_version;	// Angelia code version
 input  [7:0]sp_fifo_rddata;		// raw ACD data from Mercury for wide bandscope
 input  sp_fifo_rdempty;			// SP_fifo read empty
-input  [12:0]sp_fifo_rdused;		// SP_fifo contents
+input  [12:0]sp_fifo_rdused;	// SP_fifo contents
 input  have_sp_data;				// high when sp_fifo is full.
 input  [31:0]AssignIP;			// IP address read from EEPROM
 
@@ -1055,7 +1055,7 @@ METIS_DISCOVERY:
 			rdaddress <= rdaddress + 1'b1;
 			state_Tx <= METIS_DISCOVERY;
 		end
-		else if (zero_count < 50)begin				// send 50 x 0x04s *** tidy code, Angelia ID for PC code.
+		else if (zero_count < 50)begin				// send 50 x 0x01s *** tidy code, Angelia ID for PC code.
 			Tx_data <= 8'h04;
 			zero_count <= zero_count + 1'b1;
 			state_Tx <= METIS_DISCOVERY;	
