@@ -1,29 +1,5 @@
-## Angelia.sdc
-
-## Copyright (C) 1991-2013 Altera Corporation
-## Your use of Altera Corporation's design tools, logic functions 
-## and other software and tools, and its AMPP partner logic 
-## functions, and any output files from any of the foregoing 
-## (including device programming or simulation files), and any 
-## associated documentation or information are expressly subject 
-## to the terms and conditions of the Altera Program License 
-## Subscription Agreement, Altera MegaCore Function License 
-## Agreement, or other applicable license agreement, including, 
-## without limitation, that your use is for the sole purpose of 
-## programming logic devices manufactured by Altera and sold by 
-## Altera or its authorized distributors.  Please refer to the 
-## applicable agreement for further details.
-
-
-## VENDOR  "Altera"
-## PROGRAM "Quartus II"
-## VERSION "Version 13.0.0 Build 156 04/24/2013 SJ Web Edition"
-
-## DATE    "Fri Mar 06 11:10:37 2014"
-
-##
-## DEVICE  "EP4CE115F29C8"
-##
+# Angelia.sdc
+# 10 April 2014, Joe Martin K5SO
 
 
 #**************************************************************
@@ -33,42 +9,23 @@
 set_time_format -unit ns -decimal_places 3
 
 
-
 #**************************************************************
-# Create Clock
+# Create Clock (base clocks, external to the FPGA)
 #**************************************************************
 
-#
-#PHY_CLK125: 125MHz into the FPGA from the PHY chip
-create_clock -name {PHY_CLK125} -period 8.000 [get_ports {PHY_CLK125}]
-#
-#LTC2208_122MHz: 122.88MHz into the FPGA from ADC 1
-create_clock -name {LTC2208_122MHz} -period 8.138 [get_ports {LTC2208_122MHz}]
-#
-#LTC2208_122MHz_2: 122.88MHz into the FPGA from ADC 2
-create_clock -name {LTC2208_122MHz_2} -period 8.138 [get_ports {LTC2208_122MHz_2}]
-#
-#OSC_10MHZ: 10MHz into the FPGA
-create_clock -name {OSC_10MHZ} -period 100.000 [get_ports {OSC_10MHZ}]
-#
-#_122MHz: 122.88MHz into the FPGA directly from 122.88MHz osc module U16
-create_clock -name {_122MHz} -period 8.138 [get_ports {_122MHz}]
-#
-#PHY_RX_CLOCK: 25MHz into the FPGA from the PHY chip
-create_clock -name {PHY_RX_CLOCK} -period 40.000 [get_ports {PHY_RX_CLOCK}]
-#
-# virt_PHY_CLK125: 125MHz ...external clock from PHY chip
-create_clock -name virt_PHY_CLK125 -period 8.000
-#
-# virt_PHY_RX_CLOCK: 25MHz...external clock for clocking in data using the 25MHz osc clock
-create_clock -name {virt_PHY_RX_CLOCK} -period 40.000
-#
-# virt_122MHz: 122.88MHz...external clock for clocking in data using the 122.88MHz osc clock
-create_clock -name {virt_122MHz} -period 8.138
-#
-# virt_122MHz_2: 122.88MHz...external clock for clocking in data using the 122.88MHz osc clock
-create_clock -name {virt_122MHz_2} -period 8.138
-#
+create_clock -name PHY_CLK125 		-period 8.000 	[get_ports {PHY_CLK125}]
+create_clock -name LTC2208_122MHz 	-period 8.138 	[get_ports {LTC2208_122MHz}]
+create_clock -name LTC2208_122MHz_2 	-period 8.138 	[get_ports {LTC2208_122MHz_2}]
+create_clock -name OSC_10MHZ 		-period 100.000 [get_ports {OSC_10MHZ}]
+create_clock -name _122MHz 		-period 8.138 	[get_ports {_122MHz}]
+create_clock -name PHY_RX_CLOCK 	-period 40.000 	[get_ports {PHY_RX_CLOCK}]
+
+# virtual clocks for clocking data into the FPGA using clocks that are external to the FPGA
+create_clock -name virt_PHY_CLK125 	-period 8.000
+create_clock -name virt_PHY_RX_CLOCK 	-period 40.000
+create_clock -name virt_122MHz 		-period 8.138
+create_clock -name virt_122MHz_2 	-period 8.138
+
 
 derive_pll_clocks
 
@@ -78,508 +35,20 @@ derive_clock_uncertainty
 #**************************************************************
 # Create Generated Clock
 #**************************************************************
-#
-#inclk0=125MHz, [0]=2.5MHz, [1]=25MHz, [2]=12.5MHz
-create_generated_clock -name {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]} -source [get_pins {PLL_IF_inst|altpll_component|auto_generated|pll1|inclk[0]}] -duty_cycle 50.000 -multiply_by 43 -divide_by 110 -master_clock {LTC2208_122MHz} [get_pins {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] 
-create_generated_clock -name {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[1]} -source [get_pins {PLL_IF_inst|altpll_component|auto_generated|pll1|inclk[0]}] -duty_cycle 50.000 -multiply_by 1 -divide_by 10 -master_clock {LTC2208_122MHz} [get_pins {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[1]}] 
-create_generated_clock -name {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[2]} -source [get_pins {PLL_IF_inst|altpll_component|auto_generated|pll1|inclk[0]}] -duty_cycle 50.000 -multiply_by 43 -divide_by 176130 -master_clock {LTC2208_122MHz} [get_pins {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[2]}] 
-#
-#inclk=122.88MHz, [0]=48MHz, [1]=12.288MHz, [2]=30KHz
-create_generated_clock -name {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]} -source [get_pins {PLL_IF_inst|altpll_component|auto_generated|pll1|inclk[0]}] -duty_cycle 50.000 -multiply_by 43 -divide_by 110 -master_clock {LTC2208_122MHz} [get_pins {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] 
-create_generated_clock -name {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[1]} -source [get_pins {PLL_IF_inst|altpll_component|auto_generated|pll1|inclk[0]}] -duty_cycle 50.000 -multiply_by 1 -divide_by 10 -master_clock {LTC2208_122MHz} [get_pins {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[1]}] 
-create_generated_clock -name {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[2]} -source [get_pins {PLL_IF_inst|altpll_component|auto_generated|pll1|inclk[0]}] -duty_cycle 50.000 -multiply_by 43 -divide_by 176130 -master_clock {LTC2208_122MHz} [get_pins {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[2]}] 
-#
-#inclk0=10MHz, [0]=80KHz
-create_generated_clock -name {PLL2_inst|altpll_component|auto_generated|pll1|clk[0]} -source [get_pins {PLL2_inst|altpll_component|auto_generated|pll1|inclk[0]}] -duty_cycle 50.000 -multiply_by 1 -divide_by 125 -master_clock {OSC_10MHZ} [get_pins {PLL2_inst|altpll_component|auto_generated|pll1|clk[0]}] 
-#
-#inclk0=122.88MHz, [0]=80KHz
-create_generated_clock -name {PLL_inst|altpll_component|auto_generated|pll1|clk[0]} -source [get_pins {PLL_inst|altpll_component|auto_generated|pll1|inclk[0]}] -duty_cycle 50.000 -multiply_by 1 -divide_by 1536 -master_clock {_122MHz} [get_pins {PLL_inst|altpll_component|auto_generated|pll1|clk[0]}] 
-#
-#BCLK: 122.88MHz/40 = 3.072000MHz
+
 create_generated_clock -name {Angelia_clk_lrclk_gen:clrgen|BCLK} -source [get_ports {LTC2208_122MHz}] -divide_by 40 [get_registers {Angelia_clk_lrclk_gen:clrgen|BCLK}] 
-#
-#spc[1]: BCLK/4 = 768.000KHz
-#create_generated_clock -name {spc[1]} -source [get_registers {Angelia_clk_lrclk_gen:clrgen|BCLK}] -divide_by 4 -master_clock {Angelia_clk_lrclk_gen:clrgen|BCLK} [get_registers {spc[1]}] 
-#
-#spc[2]: BCLK/8 = 384.000KHz
 create_generated_clock -name {spc[2]} -source [get_registers {Angelia_clk_lrclk_gen:clrgen|BCLK}] -divide_by 8 -master_clock {Angelia_clk_lrclk_gen:clrgen|BCLK} [get_registers {spc[2]}] 
-#
-#PHY_RX_CLOCK_2: 25MHz/2 = 12.5 MHz
 create_generated_clock -name {PHY_RX_CLOCK_2} -source [get_ports {PHY_RX_CLOCK}] -divide_by 2 -master_clock {PHY_RX_CLOCK} [get_registers {PHY_RX_CLOCK_2}] 
-#
-#Attenuator_ADC1|clk2: 48MHz
 create_generated_clock -name {Attenuator:Attenuator_ADC1|clk_2} -source [get_pins {PLL_IF_inst|altpll_component|auto_generated|pll1|inclk[0]}] -multiply_by 1 [get_registers {Attenuator:Attenuator_ADC1|clk_2}]
-#
-#Attenuator_ADC2|clk2: 48MHz
 create_generated_clock -name {Attenuator:Attenuator_ADC2|clk_2} -source [get_pins {PLL_IF_inst|altpll_component|auto_generated|pll1|inclk[0]}] -multiply_by 1 [get_registers {Attenuator:Attenuator_ADC2|clk_2}]
-#
+create_generated_clock -name sidetone:sidetone_inst|sidetone_clock -source PHY_CLK125 -divide_by 690 sidetone:sidetone_inst|sidetone_clock
+create_generated_clock -name pro_count[2] -source [get_pins {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[3]}] -divide_by 8 pro_count[2]
 
-
-#**************************************************************
-# Set Clock Latency
-#**************************************************************
-
-
-
-#**************************************************************
-# Set Clock Uncertainty
-#**************************************************************
-
-set_clock_uncertainty -rise_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -rise_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}]  0.020  
-set_clock_uncertainty -rise_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -fall_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}]  0.020  
-set_clock_uncertainty -rise_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -rise_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}] -setup 0.150  
-set_clock_uncertainty -rise_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -rise_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}] -hold 0.160  
-set_clock_uncertainty -rise_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -fall_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}] -setup 0.150  
-set_clock_uncertainty -rise_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -fall_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}] -hold 0.160  
-set_clock_uncertainty -rise_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -rise_to [get_clocks {_122MHz}] -setup 0.110  
-set_clock_uncertainty -rise_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -rise_to [get_clocks {_122MHz}] -hold 0.080  
-set_clock_uncertainty -rise_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -fall_to [get_clocks {_122MHz}] -setup 0.110  
-set_clock_uncertainty -rise_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -fall_to [get_clocks {_122MHz}] -hold 0.080  
-set_clock_uncertainty -rise_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -rise_to [get_clocks {LTC2208_122MHz_2}] -setup 0.110  
-set_clock_uncertainty -rise_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -rise_to [get_clocks {LTC2208_122MHz_2}] -hold 0.080  
-set_clock_uncertainty -rise_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -fall_to [get_clocks {LTC2208_122MHz_2}] -setup 0.110  
-set_clock_uncertainty -rise_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -fall_to [get_clocks {LTC2208_122MHz_2}] -hold 0.080  
-set_clock_uncertainty -rise_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -rise_to [get_clocks {LTC2208_122MHz}] -setup 0.100  
-set_clock_uncertainty -rise_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -rise_to [get_clocks {LTC2208_122MHz}] -hold 0.070  
-set_clock_uncertainty -rise_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -fall_to [get_clocks {LTC2208_122MHz}] -setup 0.100  
-set_clock_uncertainty -rise_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -fall_to [get_clocks {LTC2208_122MHz}] -hold 0.070  
-set_clock_uncertainty -rise_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -rise_to [get_clocks {Attenuator:Attenuator_ADC1|clk_2}]  0.020  
-set_clock_uncertainty -rise_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -fall_to [get_clocks {Attenuator:Attenuator_ADC1|clk_2}]  0.020  
-set_clock_uncertainty -rise_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -rise_to [get_clocks {Attenuator:Attenuator_ADC2|clk_2}]  0.020  
-set_clock_uncertainty -rise_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -fall_to [get_clocks {Attenuator:Attenuator_ADC2|clk_2}]  0.020  
-set_clock_uncertainty -rise_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -rise_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[2]}]  0.020  
-set_clock_uncertainty -rise_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -fall_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[2]}]  0.020  
-set_clock_uncertainty -rise_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -rise_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[1]}]  0.020  
-set_clock_uncertainty -rise_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -fall_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[1]}]  0.020  
-set_clock_uncertainty -rise_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -rise_to [get_clocks {spc[2]}] -setup 0.110  
-set_clock_uncertainty -rise_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -rise_to [get_clocks {spc[2]}] -hold 0.080  
-set_clock_uncertainty -rise_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -fall_to [get_clocks {spc[2]}] -setup 0.110  
-set_clock_uncertainty -rise_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -fall_to [get_clocks {spc[2]}] -hold 0.080  
-set_clock_uncertainty -fall_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -rise_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}]  0.020  
-set_clock_uncertainty -fall_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -fall_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}]  0.020  
-set_clock_uncertainty -fall_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -rise_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}] -setup 0.150  
-set_clock_uncertainty -fall_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -rise_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}] -hold 0.160  
-set_clock_uncertainty -fall_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -fall_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}] -setup 0.150  
-set_clock_uncertainty -fall_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -fall_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}] -hold 0.160  
-set_clock_uncertainty -fall_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -rise_to [get_clocks {_122MHz}] -setup 0.110  
-set_clock_uncertainty -fall_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -rise_to [get_clocks {_122MHz}] -hold 0.080  
-set_clock_uncertainty -fall_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -fall_to [get_clocks {_122MHz}] -setup 0.110  
-set_clock_uncertainty -fall_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -fall_to [get_clocks {_122MHz}] -hold 0.080  
-set_clock_uncertainty -fall_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -rise_to [get_clocks {LTC2208_122MHz_2}] -setup 0.110  
-set_clock_uncertainty -fall_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -rise_to [get_clocks {LTC2208_122MHz_2}] -hold 0.080  
-set_clock_uncertainty -fall_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -fall_to [get_clocks {LTC2208_122MHz_2}] -setup 0.110  
-set_clock_uncertainty -fall_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -fall_to [get_clocks {LTC2208_122MHz_2}] -hold 0.080  
-set_clock_uncertainty -fall_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -rise_to [get_clocks {LTC2208_122MHz}] -setup 0.100  
-set_clock_uncertainty -fall_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -rise_to [get_clocks {LTC2208_122MHz}] -hold 0.070  
-set_clock_uncertainty -fall_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -fall_to [get_clocks {LTC2208_122MHz}] -setup 0.100  
-set_clock_uncertainty -fall_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -fall_to [get_clocks {LTC2208_122MHz}] -hold 0.070  
-set_clock_uncertainty -fall_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -rise_to [get_clocks {Attenuator:Attenuator_ADC1|clk_2}]  0.020  
-set_clock_uncertainty -fall_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -fall_to [get_clocks {Attenuator:Attenuator_ADC1|clk_2}]  0.020  
-set_clock_uncertainty -fall_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -rise_to [get_clocks {Attenuator:Attenuator_ADC2|clk_2}]  0.020  
-set_clock_uncertainty -fall_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -fall_to [get_clocks {Attenuator:Attenuator_ADC2|clk_2}]  0.020  
-set_clock_uncertainty -fall_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -rise_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[2]}]  0.020  
-set_clock_uncertainty -fall_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -fall_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[2]}]  0.020  
-set_clock_uncertainty -fall_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -rise_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[1]}]  0.020  
-set_clock_uncertainty -fall_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -fall_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[1]}]  0.020  
-set_clock_uncertainty -fall_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -rise_to [get_clocks {spc[2]}] -setup 0.110  
-set_clock_uncertainty -fall_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -rise_to [get_clocks {spc[2]}] -hold 0.080  
-set_clock_uncertainty -fall_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -fall_to [get_clocks {spc[2]}] -setup 0.110  
-set_clock_uncertainty -fall_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -fall_to [get_clocks {spc[2]}] -hold 0.080  
-set_clock_uncertainty -rise_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}] -rise_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -setup 0.160  
-set_clock_uncertainty -rise_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}] -rise_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -hold 0.150  
-set_clock_uncertainty -rise_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}] -fall_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -setup 0.160  
-set_clock_uncertainty -rise_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}] -fall_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -hold 0.150  
-set_clock_uncertainty -rise_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}] -rise_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}]  0.020  
-set_clock_uncertainty -rise_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}] -fall_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}]  0.020  
-set_clock_uncertainty -rise_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}] -rise_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1]}]  0.020  
-set_clock_uncertainty -rise_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}] -fall_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1]}]  0.020  
-set_clock_uncertainty -rise_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}] -rise_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0]}]  0.020  
-set_clock_uncertainty -rise_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}] -fall_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0]}]  0.020  
-set_clock_uncertainty -rise_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}] -rise_to [get_clocks {LTC2208_122MHz}] -setup 0.110  
-set_clock_uncertainty -rise_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}] -rise_to [get_clocks {LTC2208_122MHz}] -hold 0.080  
-set_clock_uncertainty -rise_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}] -fall_to [get_clocks {LTC2208_122MHz}] -setup 0.110  
-set_clock_uncertainty -rise_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}] -fall_to [get_clocks {LTC2208_122MHz}] -hold 0.080  
-set_clock_uncertainty -rise_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}] -rise_to [get_clocks {PHY_RX_CLOCK_2}] -setup 0.110  
-set_clock_uncertainty -rise_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}] -rise_to [get_clocks {PHY_RX_CLOCK_2}] -hold 0.080  
-set_clock_uncertainty -rise_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}] -fall_to [get_clocks {PHY_RX_CLOCK_2}] -setup 0.110  
-set_clock_uncertainty -rise_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}] -fall_to [get_clocks {PHY_RX_CLOCK_2}] -hold 0.080  
-set_clock_uncertainty -rise_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}] -rise_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[2]}] -setup 0.160  
-set_clock_uncertainty -rise_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}] -rise_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[2]}] -hold 0.150  
-set_clock_uncertainty -rise_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}] -fall_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[2]}] -setup 0.160  
-set_clock_uncertainty -rise_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}] -fall_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[2]}] -hold 0.150  
-set_clock_uncertainty -fall_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}] -rise_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -setup 0.160  
-set_clock_uncertainty -fall_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}] -rise_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -hold 0.150  
-set_clock_uncertainty -fall_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}] -fall_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -setup 0.160  
-set_clock_uncertainty -fall_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}] -fall_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -hold 0.150  
-set_clock_uncertainty -fall_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}] -rise_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}]  0.020  
-set_clock_uncertainty -fall_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}] -fall_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}]  0.020  
-set_clock_uncertainty -fall_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}] -rise_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1]}]  0.020  
-set_clock_uncertainty -fall_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}] -fall_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1]}]  0.020  
-set_clock_uncertainty -fall_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}] -rise_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0]}]  0.020  
-set_clock_uncertainty -fall_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}] -fall_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0]}]  0.020  
-set_clock_uncertainty -fall_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}] -rise_to [get_clocks {LTC2208_122MHz}] -setup 0.110  
-set_clock_uncertainty -fall_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}] -rise_to [get_clocks {LTC2208_122MHz}] -hold 0.080  
-set_clock_uncertainty -fall_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}] -fall_to [get_clocks {LTC2208_122MHz}] -setup 0.110  
-set_clock_uncertainty -fall_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}] -fall_to [get_clocks {LTC2208_122MHz}] -hold 0.080  
-set_clock_uncertainty -fall_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}] -rise_to [get_clocks {PHY_RX_CLOCK_2}] -setup 0.110  
-set_clock_uncertainty -fall_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}] -rise_to [get_clocks {PHY_RX_CLOCK_2}] -hold 0.080  
-set_clock_uncertainty -fall_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}] -fall_to [get_clocks {PHY_RX_CLOCK_2}] -setup 0.110  
-set_clock_uncertainty -fall_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}] -fall_to [get_clocks {PHY_RX_CLOCK_2}] -hold 0.080  
-set_clock_uncertainty -fall_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}] -rise_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[2]}] -setup 0.160  
-set_clock_uncertainty -fall_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}] -rise_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[2]}] -hold 0.150  
-set_clock_uncertainty -fall_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}] -fall_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[2]}] -setup 0.160  
-set_clock_uncertainty -fall_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}] -fall_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[2]}] -hold 0.150  
-set_clock_uncertainty -rise_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1]}] -rise_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -setup 0.160  
-set_clock_uncertainty -rise_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1]}] -rise_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -hold 0.150  
-set_clock_uncertainty -rise_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1]}] -fall_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -setup 0.160  
-set_clock_uncertainty -rise_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1]}] -fall_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -hold 0.150  
-set_clock_uncertainty -rise_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1]}] -rise_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}]  0.020  
-set_clock_uncertainty -rise_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1]}] -fall_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}]  0.020  
-set_clock_uncertainty -rise_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1]}] -rise_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1]}]  0.020  
-set_clock_uncertainty -rise_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1]}] -fall_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1]}]  0.020  
-set_clock_uncertainty -rise_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1]}] -rise_to [get_clocks {_122MHz}] -setup 0.110  
-set_clock_uncertainty -rise_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1]}] -rise_to [get_clocks {_122MHz}] -hold 0.080  
-set_clock_uncertainty -rise_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1]}] -fall_to [get_clocks {_122MHz}] -setup 0.110  
-set_clock_uncertainty -rise_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1]}] -fall_to [get_clocks {_122MHz}] -hold 0.080  
-set_clock_uncertainty -rise_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1]}] -rise_to [get_clocks {PHY_CLK125}] -setup 0.100  
-set_clock_uncertainty -rise_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1]}] -rise_to [get_clocks {PHY_CLK125}] -hold 0.070  
-set_clock_uncertainty -rise_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1]}] -fall_to [get_clocks {PHY_CLK125}] -setup 0.100  
-set_clock_uncertainty -rise_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1]}] -fall_to [get_clocks {PHY_CLK125}] -hold 0.070  
-set_clock_uncertainty -rise_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1]}] -rise_to [get_clocks {PHY_RX_CLOCK_2}] -setup 0.110  
-set_clock_uncertainty -rise_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1]}] -rise_to [get_clocks {PHY_RX_CLOCK_2}] -hold 0.080  
-set_clock_uncertainty -rise_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1]}] -fall_to [get_clocks {PHY_RX_CLOCK_2}] -setup 0.110  
-set_clock_uncertainty -rise_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1]}] -fall_to [get_clocks {PHY_RX_CLOCK_2}] -hold 0.080  
-set_clock_uncertainty -fall_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1]}] -rise_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -setup 0.160  
-set_clock_uncertainty -fall_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1]}] -rise_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -hold 0.150  
-set_clock_uncertainty -fall_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1]}] -fall_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -setup 0.160  
-set_clock_uncertainty -fall_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1]}] -fall_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -hold 0.150  
-set_clock_uncertainty -fall_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1]}] -rise_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}]  0.020  
-set_clock_uncertainty -fall_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1]}] -fall_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}]  0.020  
-set_clock_uncertainty -fall_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1]}] -rise_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1]}]  0.020  
-set_clock_uncertainty -fall_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1]}] -fall_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1]}]  0.020  
-set_clock_uncertainty -fall_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1]}] -rise_to [get_clocks {_122MHz}] -setup 0.110  
-set_clock_uncertainty -fall_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1]}] -rise_to [get_clocks {_122MHz}] -hold 0.080  
-set_clock_uncertainty -fall_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1]}] -fall_to [get_clocks {_122MHz}] -setup 0.110  
-set_clock_uncertainty -fall_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1]}] -fall_to [get_clocks {_122MHz}] -hold 0.080  
-set_clock_uncertainty -fall_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1]}] -rise_to [get_clocks {PHY_CLK125}] -setup 0.100  
-set_clock_uncertainty -fall_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1]}] -rise_to [get_clocks {PHY_CLK125}] -hold 0.070  
-set_clock_uncertainty -fall_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1]}] -fall_to [get_clocks {PHY_CLK125}] -setup 0.100  
-set_clock_uncertainty -fall_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1]}] -fall_to [get_clocks {PHY_CLK125}] -hold 0.070  
-set_clock_uncertainty -fall_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1]}] -rise_to [get_clocks {PHY_RX_CLOCK_2}] -setup 0.110  
-set_clock_uncertainty -fall_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1]}] -rise_to [get_clocks {PHY_RX_CLOCK_2}] -hold 0.080  
-set_clock_uncertainty -fall_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1]}] -fall_to [get_clocks {PHY_RX_CLOCK_2}] -setup 0.110  
-set_clock_uncertainty -fall_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1]}] -fall_to [get_clocks {PHY_RX_CLOCK_2}] -hold 0.080  
-set_clock_uncertainty -rise_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0]}] -rise_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}]  0.020  
-set_clock_uncertainty -rise_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0]}] -fall_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}]  0.020  
-set_clock_uncertainty -rise_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0]}] -rise_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0]}]  0.020  
-set_clock_uncertainty -rise_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0]}] -fall_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0]}]  0.020  
-set_clock_uncertainty -rise_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0]}] -rise_to [get_clocks {_122MHz}] -setup 0.110  
-set_clock_uncertainty -rise_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0]}] -rise_to [get_clocks {_122MHz}] -hold 0.080  
-set_clock_uncertainty -rise_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0]}] -fall_to [get_clocks {_122MHz}] -setup 0.110  
-set_clock_uncertainty -rise_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0]}] -fall_to [get_clocks {_122MHz}] -hold 0.080  
-set_clock_uncertainty -rise_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0]}] -rise_to [get_clocks {PHY_CLK125}] -setup 0.100  
-set_clock_uncertainty -rise_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0]}] -rise_to [get_clocks {PHY_CLK125}] -hold 0.070  
-set_clock_uncertainty -rise_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0]}] -fall_to [get_clocks {PHY_CLK125}] -setup 0.100  
-set_clock_uncertainty -rise_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0]}] -fall_to [get_clocks {PHY_CLK125}] -hold 0.070  
-set_clock_uncertainty -rise_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0]}] -rise_to [get_clocks {PHY_RX_CLOCK_2}] -setup 0.110  
-set_clock_uncertainty -rise_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0]}] -rise_to [get_clocks {PHY_RX_CLOCK_2}] -hold 0.080  
-set_clock_uncertainty -rise_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0]}] -fall_to [get_clocks {PHY_RX_CLOCK_2}] -setup 0.110  
-set_clock_uncertainty -rise_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0]}] -fall_to [get_clocks {PHY_RX_CLOCK_2}] -hold 0.080  
-set_clock_uncertainty -fall_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0]}] -rise_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}]  0.020  
-set_clock_uncertainty -fall_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0]}] -fall_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}]  0.020  
-set_clock_uncertainty -fall_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0]}] -rise_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0]}]  0.020  
-set_clock_uncertainty -fall_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0]}] -fall_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0]}]  0.020  
-set_clock_uncertainty -fall_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0]}] -rise_to [get_clocks {_122MHz}] -setup 0.110  
-set_clock_uncertainty -fall_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0]}] -rise_to [get_clocks {_122MHz}] -hold 0.080  
-set_clock_uncertainty -fall_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0]}] -fall_to [get_clocks {_122MHz}] -setup 0.110  
-set_clock_uncertainty -fall_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0]}] -fall_to [get_clocks {_122MHz}] -hold 0.080  
-set_clock_uncertainty -fall_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0]}] -rise_to [get_clocks {PHY_CLK125}] -setup 0.100  
-set_clock_uncertainty -fall_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0]}] -rise_to [get_clocks {PHY_CLK125}] -hold 0.070  
-set_clock_uncertainty -fall_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0]}] -fall_to [get_clocks {PHY_CLK125}] -setup 0.100  
-set_clock_uncertainty -fall_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0]}] -fall_to [get_clocks {PHY_CLK125}] -hold 0.070  
-set_clock_uncertainty -fall_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0]}] -rise_to [get_clocks {PHY_RX_CLOCK_2}] -setup 0.110  
-set_clock_uncertainty -fall_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0]}] -rise_to [get_clocks {PHY_RX_CLOCK_2}] -hold 0.080  
-set_clock_uncertainty -fall_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0]}] -fall_to [get_clocks {PHY_RX_CLOCK_2}] -setup 0.110  
-set_clock_uncertainty -fall_from [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0]}] -fall_to [get_clocks {PHY_RX_CLOCK_2}] -hold 0.080  
-set_clock_uncertainty -rise_from [get_clocks {virt_122MHz}] -rise_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -setup 0.070  
-set_clock_uncertainty -rise_from [get_clocks {virt_122MHz}] -rise_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -hold 0.090  
-set_clock_uncertainty -rise_from [get_clocks {virt_122MHz}] -fall_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -setup 0.070  
-set_clock_uncertainty -rise_from [get_clocks {virt_122MHz}] -fall_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -hold 0.090  
-set_clock_uncertainty -rise_from [get_clocks {virt_122MHz}] -rise_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0]}] -setup 0.060  
-set_clock_uncertainty -rise_from [get_clocks {virt_122MHz}] -rise_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0]}] -hold 0.090  
-set_clock_uncertainty -rise_from [get_clocks {virt_122MHz}] -fall_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0]}] -setup 0.060  
-set_clock_uncertainty -rise_from [get_clocks {virt_122MHz}] -fall_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0]}] -hold 0.090  
-set_clock_uncertainty -rise_from [get_clocks {virt_122MHz}] -rise_to [get_clocks {LTC2208_122MHz}]  0.020  
-set_clock_uncertainty -rise_from [get_clocks {virt_122MHz}] -fall_to [get_clocks {LTC2208_122MHz}]  0.020  
-set_clock_uncertainty -rise_from [get_clocks {virt_122MHz}] -rise_to [get_clocks {Angelia_clk_lrclk_gen:clrgen|BCLK}]  0.020  
-set_clock_uncertainty -rise_from [get_clocks {virt_122MHz}] -fall_to [get_clocks {Angelia_clk_lrclk_gen:clrgen|BCLK}]  0.020  
-set_clock_uncertainty -fall_from [get_clocks {virt_122MHz}] -rise_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -setup 0.070  
-set_clock_uncertainty -fall_from [get_clocks {virt_122MHz}] -rise_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -hold 0.090  
-set_clock_uncertainty -fall_from [get_clocks {virt_122MHz}] -fall_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -setup 0.070  
-set_clock_uncertainty -fall_from [get_clocks {virt_122MHz}] -fall_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -hold 0.090  
-set_clock_uncertainty -fall_from [get_clocks {virt_122MHz}] -rise_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0]}] -setup 0.060  
-set_clock_uncertainty -fall_from [get_clocks {virt_122MHz}] -rise_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0]}] -hold 0.090  
-set_clock_uncertainty -fall_from [get_clocks {virt_122MHz}] -fall_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0]}] -setup 0.060  
-set_clock_uncertainty -fall_from [get_clocks {virt_122MHz}] -fall_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0]}] -hold 0.090  
-set_clock_uncertainty -fall_from [get_clocks {virt_122MHz}] -rise_to [get_clocks {LTC2208_122MHz}]  0.020  
-set_clock_uncertainty -fall_from [get_clocks {virt_122MHz}] -fall_to [get_clocks {LTC2208_122MHz}]  0.020  
-set_clock_uncertainty -fall_from [get_clocks {virt_122MHz}] -rise_to [get_clocks {Angelia_clk_lrclk_gen:clrgen|BCLK}]  0.020  
-set_clock_uncertainty -fall_from [get_clocks {virt_122MHz}] -fall_to [get_clocks {Angelia_clk_lrclk_gen:clrgen|BCLK}]  0.020  
-set_clock_uncertainty -rise_from [get_clocks {virt_PHY_RX_CLOCK}] -rise_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -setup 0.070  
-set_clock_uncertainty -rise_from [get_clocks {virt_PHY_RX_CLOCK}] -rise_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -hold 0.090  
-set_clock_uncertainty -rise_from [get_clocks {virt_PHY_RX_CLOCK}] -fall_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -setup 0.070  
-set_clock_uncertainty -rise_from [get_clocks {virt_PHY_RX_CLOCK}] -fall_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -hold 0.090  
-set_clock_uncertainty -rise_from [get_clocks {virt_PHY_RX_CLOCK}] -rise_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1]}] -setup 0.060  
-set_clock_uncertainty -rise_from [get_clocks {virt_PHY_RX_CLOCK}] -rise_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1]}] -hold 0.090  
-set_clock_uncertainty -rise_from [get_clocks {virt_PHY_RX_CLOCK}] -fall_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1]}] -setup 0.060  
-set_clock_uncertainty -rise_from [get_clocks {virt_PHY_RX_CLOCK}] -fall_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1]}] -hold 0.090  
-set_clock_uncertainty -rise_from [get_clocks {virt_PHY_RX_CLOCK}] -rise_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0]}] -setup 0.060  
-set_clock_uncertainty -rise_from [get_clocks {virt_PHY_RX_CLOCK}] -rise_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0]}] -hold 0.090  
-set_clock_uncertainty -rise_from [get_clocks {virt_PHY_RX_CLOCK}] -fall_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0]}] -setup 0.060  
-set_clock_uncertainty -rise_from [get_clocks {virt_PHY_RX_CLOCK}] -fall_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0]}] -hold 0.090  
-set_clock_uncertainty -rise_from [get_clocks {virt_PHY_RX_CLOCK}] -rise_to [get_clocks {PHY_RX_CLOCK}]  0.020  
-set_clock_uncertainty -rise_from [get_clocks {virt_PHY_RX_CLOCK}] -fall_to [get_clocks {PHY_RX_CLOCK}]  0.020  
-set_clock_uncertainty -fall_from [get_clocks {virt_PHY_RX_CLOCK}] -rise_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -setup 0.070  
-set_clock_uncertainty -fall_from [get_clocks {virt_PHY_RX_CLOCK}] -rise_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -hold 0.090  
-set_clock_uncertainty -fall_from [get_clocks {virt_PHY_RX_CLOCK}] -fall_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -setup 0.070  
-set_clock_uncertainty -fall_from [get_clocks {virt_PHY_RX_CLOCK}] -fall_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -hold 0.090  
-set_clock_uncertainty -fall_from [get_clocks {virt_PHY_RX_CLOCK}] -rise_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1]}] -setup 0.060  
-set_clock_uncertainty -fall_from [get_clocks {virt_PHY_RX_CLOCK}] -rise_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1]}] -hold 0.090  
-set_clock_uncertainty -fall_from [get_clocks {virt_PHY_RX_CLOCK}] -fall_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1]}] -setup 0.060  
-set_clock_uncertainty -fall_from [get_clocks {virt_PHY_RX_CLOCK}] -fall_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1]}] -hold 0.090  
-set_clock_uncertainty -fall_from [get_clocks {virt_PHY_RX_CLOCK}] -rise_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0]}] -setup 0.060  
-set_clock_uncertainty -fall_from [get_clocks {virt_PHY_RX_CLOCK}] -rise_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0]}] -hold 0.090  
-set_clock_uncertainty -fall_from [get_clocks {virt_PHY_RX_CLOCK}] -fall_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0]}] -setup 0.060  
-set_clock_uncertainty -fall_from [get_clocks {virt_PHY_RX_CLOCK}] -fall_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0]}] -hold 0.090  
-set_clock_uncertainty -fall_from [get_clocks {virt_PHY_RX_CLOCK}] -rise_to [get_clocks {PHY_RX_CLOCK}]  0.020  
-set_clock_uncertainty -fall_from [get_clocks {virt_PHY_RX_CLOCK}] -fall_to [get_clocks {PHY_RX_CLOCK}]  0.020  
-set_clock_uncertainty -rise_from [get_clocks {PHY_RX_CLOCK}] -rise_to [get_clocks {PHY_RX_CLOCK}]  0.020  
-set_clock_uncertainty -rise_from [get_clocks {PHY_RX_CLOCK}] -fall_to [get_clocks {PHY_RX_CLOCK}]  0.020  
-set_clock_uncertainty -rise_from [get_clocks {PHY_RX_CLOCK}] -rise_to [get_clocks {PHY_RX_CLOCK_2}]  0.020  
-set_clock_uncertainty -rise_from [get_clocks {PHY_RX_CLOCK}] -fall_to [get_clocks {PHY_RX_CLOCK_2}]  0.020  
-set_clock_uncertainty -fall_from [get_clocks {PHY_RX_CLOCK}] -rise_to [get_clocks {PHY_RX_CLOCK}]  0.020  
-set_clock_uncertainty -fall_from [get_clocks {PHY_RX_CLOCK}] -fall_to [get_clocks {PHY_RX_CLOCK}]  0.020  
-set_clock_uncertainty -fall_from [get_clocks {PHY_RX_CLOCK}] -rise_to [get_clocks {PHY_RX_CLOCK_2}]  0.020  
-set_clock_uncertainty -fall_from [get_clocks {PHY_RX_CLOCK}] -fall_to [get_clocks {PHY_RX_CLOCK_2}]  0.020  
-set_clock_uncertainty -rise_from [get_clocks {_122MHz}] -rise_to [get_clocks {_122MHz}]  0.020  
-set_clock_uncertainty -rise_from [get_clocks {_122MHz}] -fall_to [get_clocks {_122MHz}]  0.020  
-set_clock_uncertainty -rise_from [get_clocks {_122MHz}] -rise_to [get_clocks {LTC2208_122MHz}]  0.040  
-set_clock_uncertainty -rise_from [get_clocks {_122MHz}] -fall_to [get_clocks {LTC2208_122MHz}]  0.040  
-set_clock_uncertainty -fall_from [get_clocks {_122MHz}] -rise_to [get_clocks {_122MHz}]  0.020  
-set_clock_uncertainty -fall_from [get_clocks {_122MHz}] -fall_to [get_clocks {_122MHz}]  0.020  
-set_clock_uncertainty -fall_from [get_clocks {_122MHz}] -rise_to [get_clocks {LTC2208_122MHz}]  0.040  
-set_clock_uncertainty -fall_from [get_clocks {_122MHz}] -fall_to [get_clocks {LTC2208_122MHz}]  0.040  
-set_clock_uncertainty -rise_from [get_clocks {LTC2208_122MHz_2}] -rise_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -setup 0.080  
-set_clock_uncertainty -rise_from [get_clocks {LTC2208_122MHz_2}] -rise_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -hold 0.110  
-set_clock_uncertainty -rise_from [get_clocks {LTC2208_122MHz_2}] -fall_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -setup 0.080  
-set_clock_uncertainty -rise_from [get_clocks {LTC2208_122MHz_2}] -fall_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -hold 0.110  
-set_clock_uncertainty -rise_from [get_clocks {LTC2208_122MHz_2}] -rise_to [get_clocks {LTC2208_122MHz_2}]  0.020  
-set_clock_uncertainty -rise_from [get_clocks {LTC2208_122MHz_2}] -fall_to [get_clocks {LTC2208_122MHz_2}]  0.020  
-set_clock_uncertainty -rise_from [get_clocks {LTC2208_122MHz_2}] -rise_to [get_clocks {LTC2208_122MHz}]  0.040  
-set_clock_uncertainty -rise_from [get_clocks {LTC2208_122MHz_2}] -fall_to [get_clocks {LTC2208_122MHz}]  0.040  
-set_clock_uncertainty -fall_from [get_clocks {LTC2208_122MHz_2}] -rise_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -setup 0.080  
-set_clock_uncertainty -fall_from [get_clocks {LTC2208_122MHz_2}] -rise_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -hold 0.110  
-set_clock_uncertainty -fall_from [get_clocks {LTC2208_122MHz_2}] -fall_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -setup 0.080  
-set_clock_uncertainty -fall_from [get_clocks {LTC2208_122MHz_2}] -fall_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -hold 0.110  
-set_clock_uncertainty -fall_from [get_clocks {LTC2208_122MHz_2}] -rise_to [get_clocks {LTC2208_122MHz_2}]  0.020  
-set_clock_uncertainty -fall_from [get_clocks {LTC2208_122MHz_2}] -fall_to [get_clocks {LTC2208_122MHz_2}]  0.020  
-set_clock_uncertainty -fall_from [get_clocks {LTC2208_122MHz_2}] -rise_to [get_clocks {LTC2208_122MHz}]  0.040  
-set_clock_uncertainty -fall_from [get_clocks {LTC2208_122MHz_2}] -fall_to [get_clocks {LTC2208_122MHz}]  0.040  
-set_clock_uncertainty -rise_from [get_clocks {LTC2208_122MHz}] -rise_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -setup 0.070  
-set_clock_uncertainty -rise_from [get_clocks {LTC2208_122MHz}] -rise_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -hold 0.100  
-set_clock_uncertainty -rise_from [get_clocks {LTC2208_122MHz}] -fall_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -setup 0.070  
-set_clock_uncertainty -rise_from [get_clocks {LTC2208_122MHz}] -fall_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -hold 0.100  
-set_clock_uncertainty -rise_from [get_clocks {LTC2208_122MHz}] -rise_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}] -setup 0.080  
-set_clock_uncertainty -rise_from [get_clocks {LTC2208_122MHz}] -rise_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}] -hold 0.110  
-set_clock_uncertainty -rise_from [get_clocks {LTC2208_122MHz}] -fall_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}] -setup 0.080  
-set_clock_uncertainty -rise_from [get_clocks {LTC2208_122MHz}] -fall_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}] -hold 0.110  
-set_clock_uncertainty -rise_from [get_clocks {LTC2208_122MHz}] -rise_to [get_clocks {_122MHz}]  0.040  
-set_clock_uncertainty -rise_from [get_clocks {LTC2208_122MHz}] -fall_to [get_clocks {_122MHz}]  0.040  
-set_clock_uncertainty -rise_from [get_clocks {LTC2208_122MHz}] -rise_to [get_clocks {LTC2208_122MHz_2}]  0.040  
-set_clock_uncertainty -rise_from [get_clocks {LTC2208_122MHz}] -fall_to [get_clocks {LTC2208_122MHz_2}]  0.040  
-set_clock_uncertainty -rise_from [get_clocks {LTC2208_122MHz}] -rise_to [get_clocks {LTC2208_122MHz}]  0.020  
-set_clock_uncertainty -rise_from [get_clocks {LTC2208_122MHz}] -fall_to [get_clocks {LTC2208_122MHz}]  0.020  
-set_clock_uncertainty -rise_from [get_clocks {LTC2208_122MHz}] -rise_to [get_clocks {spc[2]}]  0.030  
-set_clock_uncertainty -rise_from [get_clocks {LTC2208_122MHz}] -fall_to [get_clocks {spc[2]}]  0.030  
-set_clock_uncertainty -rise_from [get_clocks {LTC2208_122MHz}] -rise_to [get_clocks {Angelia_clk_lrclk_gen:clrgen|BCLK}]  0.020  
-set_clock_uncertainty -rise_from [get_clocks {LTC2208_122MHz}] -fall_to [get_clocks {Angelia_clk_lrclk_gen:clrgen|BCLK}]  0.020  
-set_clock_uncertainty -fall_from [get_clocks {LTC2208_122MHz}] -rise_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -setup 0.070  
-set_clock_uncertainty -fall_from [get_clocks {LTC2208_122MHz}] -rise_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -hold 0.100  
-set_clock_uncertainty -fall_from [get_clocks {LTC2208_122MHz}] -fall_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -setup 0.070  
-set_clock_uncertainty -fall_from [get_clocks {LTC2208_122MHz}] -fall_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -hold 0.100  
-set_clock_uncertainty -fall_from [get_clocks {LTC2208_122MHz}] -rise_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}] -setup 0.080  
-set_clock_uncertainty -fall_from [get_clocks {LTC2208_122MHz}] -rise_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}] -hold 0.110  
-set_clock_uncertainty -fall_from [get_clocks {LTC2208_122MHz}] -fall_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}] -setup 0.080  
-set_clock_uncertainty -fall_from [get_clocks {LTC2208_122MHz}] -fall_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}] -hold 0.110  
-set_clock_uncertainty -fall_from [get_clocks {LTC2208_122MHz}] -rise_to [get_clocks {_122MHz}]  0.040  
-set_clock_uncertainty -fall_from [get_clocks {LTC2208_122MHz}] -fall_to [get_clocks {_122MHz}]  0.040  
-set_clock_uncertainty -fall_from [get_clocks {LTC2208_122MHz}] -rise_to [get_clocks {LTC2208_122MHz_2}]  0.040  
-set_clock_uncertainty -fall_from [get_clocks {LTC2208_122MHz}] -fall_to [get_clocks {LTC2208_122MHz_2}]  0.040  
-set_clock_uncertainty -fall_from [get_clocks {LTC2208_122MHz}] -rise_to [get_clocks {LTC2208_122MHz}]  0.020  
-set_clock_uncertainty -fall_from [get_clocks {LTC2208_122MHz}] -fall_to [get_clocks {LTC2208_122MHz}]  0.020  
-set_clock_uncertainty -fall_from [get_clocks {LTC2208_122MHz}] -rise_to [get_clocks {spc[2]}]  0.030  
-set_clock_uncertainty -fall_from [get_clocks {LTC2208_122MHz}] -fall_to [get_clocks {spc[2]}]  0.030  
-set_clock_uncertainty -fall_from [get_clocks {LTC2208_122MHz}] -rise_to [get_clocks {Angelia_clk_lrclk_gen:clrgen|BCLK}]  0.020  
-set_clock_uncertainty -fall_from [get_clocks {LTC2208_122MHz}] -fall_to [get_clocks {Angelia_clk_lrclk_gen:clrgen|BCLK}]  0.020  
-set_clock_uncertainty -rise_from [get_clocks {PHY_CLK125}] -rise_to [get_clocks {PHY_CLK125}]  0.020  
-set_clock_uncertainty -rise_from [get_clocks {PHY_CLK125}] -fall_to [get_clocks {PHY_CLK125}]  0.020  
-set_clock_uncertainty -fall_from [get_clocks {PHY_CLK125}] -rise_to [get_clocks {PHY_CLK125}]  0.020  
-set_clock_uncertainty -fall_from [get_clocks {PHY_CLK125}] -fall_to [get_clocks {PHY_CLK125}]  0.020  
-set_clock_uncertainty -rise_from [get_clocks {PHY_RX_CLOCK_2}] -rise_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}] -setup 0.080  
-set_clock_uncertainty -rise_from [get_clocks {PHY_RX_CLOCK_2}] -rise_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}] -hold 0.110  
-set_clock_uncertainty -rise_from [get_clocks {PHY_RX_CLOCK_2}] -fall_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}] -setup 0.080  
-set_clock_uncertainty -rise_from [get_clocks {PHY_RX_CLOCK_2}] -fall_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}] -hold 0.110  
-set_clock_uncertainty -rise_from [get_clocks {PHY_RX_CLOCK_2}] -rise_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1]}] -setup 0.080  
-set_clock_uncertainty -rise_from [get_clocks {PHY_RX_CLOCK_2}] -rise_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1]}] -hold 0.110  
-set_clock_uncertainty -rise_from [get_clocks {PHY_RX_CLOCK_2}] -fall_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1]}] -setup 0.080  
-set_clock_uncertainty -rise_from [get_clocks {PHY_RX_CLOCK_2}] -fall_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1]}] -hold 0.110  
-set_clock_uncertainty -rise_from [get_clocks {PHY_RX_CLOCK_2}] -rise_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0]}] -setup 0.080  
-set_clock_uncertainty -rise_from [get_clocks {PHY_RX_CLOCK_2}] -rise_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0]}] -hold 0.110  
-set_clock_uncertainty -rise_from [get_clocks {PHY_RX_CLOCK_2}] -fall_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0]}] -setup 0.080  
-set_clock_uncertainty -rise_from [get_clocks {PHY_RX_CLOCK_2}] -fall_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0]}] -hold 0.110  
-set_clock_uncertainty -rise_from [get_clocks {PHY_RX_CLOCK_2}] -rise_to [get_clocks {PHY_RX_CLOCK}]  0.020  
-set_clock_uncertainty -rise_from [get_clocks {PHY_RX_CLOCK_2}] -fall_to [get_clocks {PHY_RX_CLOCK}]  0.020  
-set_clock_uncertainty -rise_from [get_clocks {PHY_RX_CLOCK_2}] -rise_to [get_clocks {PHY_RX_CLOCK_2}]  0.030  
-set_clock_uncertainty -rise_from [get_clocks {PHY_RX_CLOCK_2}] -fall_to [get_clocks {PHY_RX_CLOCK_2}]  0.030  
-set_clock_uncertainty -fall_from [get_clocks {PHY_RX_CLOCK_2}] -rise_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}] -setup 0.080  
-set_clock_uncertainty -fall_from [get_clocks {PHY_RX_CLOCK_2}] -rise_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}] -hold 0.110  
-set_clock_uncertainty -fall_from [get_clocks {PHY_RX_CLOCK_2}] -fall_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}] -setup 0.080  
-set_clock_uncertainty -fall_from [get_clocks {PHY_RX_CLOCK_2}] -fall_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]}] -hold 0.110  
-set_clock_uncertainty -fall_from [get_clocks {PHY_RX_CLOCK_2}] -rise_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1]}] -setup 0.080  
-set_clock_uncertainty -fall_from [get_clocks {PHY_RX_CLOCK_2}] -rise_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1]}] -hold 0.110  
-set_clock_uncertainty -fall_from [get_clocks {PHY_RX_CLOCK_2}] -fall_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1]}] -setup 0.080  
-set_clock_uncertainty -fall_from [get_clocks {PHY_RX_CLOCK_2}] -fall_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1]}] -hold 0.110  
-set_clock_uncertainty -fall_from [get_clocks {PHY_RX_CLOCK_2}] -rise_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0]}] -setup 0.080  
-set_clock_uncertainty -fall_from [get_clocks {PHY_RX_CLOCK_2}] -rise_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0]}] -hold 0.110  
-set_clock_uncertainty -fall_from [get_clocks {PHY_RX_CLOCK_2}] -fall_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0]}] -setup 0.080  
-set_clock_uncertainty -fall_from [get_clocks {PHY_RX_CLOCK_2}] -fall_to [get_clocks {PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0]}] -hold 0.110  
-set_clock_uncertainty -fall_from [get_clocks {PHY_RX_CLOCK_2}] -rise_to [get_clocks {PHY_RX_CLOCK}]  0.020  
-set_clock_uncertainty -fall_from [get_clocks {PHY_RX_CLOCK_2}] -fall_to [get_clocks {PHY_RX_CLOCK}]  0.020  
-set_clock_uncertainty -fall_from [get_clocks {PHY_RX_CLOCK_2}] -rise_to [get_clocks {PHY_RX_CLOCK_2}]  0.030  
-set_clock_uncertainty -fall_from [get_clocks {PHY_RX_CLOCK_2}] -fall_to [get_clocks {PHY_RX_CLOCK_2}]  0.030  
-set_clock_uncertainty -rise_from [get_clocks {Attenuator:Attenuator_ADC1|clk_2}] -rise_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}]  0.020  
-set_clock_uncertainty -rise_from [get_clocks {Attenuator:Attenuator_ADC1|clk_2}] -fall_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}]  0.020  
-set_clock_uncertainty -rise_from [get_clocks {Attenuator:Attenuator_ADC1|clk_2}] -rise_to [get_clocks {_122MHz}] -setup 0.110  
-set_clock_uncertainty -rise_from [get_clocks {Attenuator:Attenuator_ADC1|clk_2}] -rise_to [get_clocks {_122MHz}] -hold 0.080  
-set_clock_uncertainty -rise_from [get_clocks {Attenuator:Attenuator_ADC1|clk_2}] -fall_to [get_clocks {_122MHz}] -setup 0.110  
-set_clock_uncertainty -rise_from [get_clocks {Attenuator:Attenuator_ADC1|clk_2}] -fall_to [get_clocks {_122MHz}] -hold 0.080  
-set_clock_uncertainty -rise_from [get_clocks {Attenuator:Attenuator_ADC1|clk_2}] -rise_to [get_clocks {Attenuator:Attenuator_ADC1|clk_2}]  0.020  
-set_clock_uncertainty -rise_from [get_clocks {Attenuator:Attenuator_ADC1|clk_2}] -fall_to [get_clocks {Attenuator:Attenuator_ADC1|clk_2}]  0.020  
-set_clock_uncertainty -fall_from [get_clocks {Attenuator:Attenuator_ADC1|clk_2}] -rise_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}]  0.020  
-set_clock_uncertainty -fall_from [get_clocks {Attenuator:Attenuator_ADC1|clk_2}] -fall_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}]  0.020  
-set_clock_uncertainty -fall_from [get_clocks {Attenuator:Attenuator_ADC1|clk_2}] -rise_to [get_clocks {_122MHz}] -setup 0.110  
-set_clock_uncertainty -fall_from [get_clocks {Attenuator:Attenuator_ADC1|clk_2}] -rise_to [get_clocks {_122MHz}] -hold 0.080  
-set_clock_uncertainty -fall_from [get_clocks {Attenuator:Attenuator_ADC1|clk_2}] -fall_to [get_clocks {_122MHz}] -setup 0.110  
-set_clock_uncertainty -fall_from [get_clocks {Attenuator:Attenuator_ADC1|clk_2}] -fall_to [get_clocks {_122MHz}] -hold 0.080  
-set_clock_uncertainty -fall_from [get_clocks {Attenuator:Attenuator_ADC1|clk_2}] -rise_to [get_clocks {Attenuator:Attenuator_ADC1|clk_2}]  0.020  
-set_clock_uncertainty -fall_from [get_clocks {Attenuator:Attenuator_ADC1|clk_2}] -fall_to [get_clocks {Attenuator:Attenuator_ADC1|clk_2}]  0.020  
-set_clock_uncertainty -rise_from [get_clocks {Attenuator:Attenuator_ADC2|clk_2}] -rise_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}]  0.020  
-set_clock_uncertainty -rise_from [get_clocks {Attenuator:Attenuator_ADC2|clk_2}] -fall_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}]  0.020  
-set_clock_uncertainty -rise_from [get_clocks {Attenuator:Attenuator_ADC2|clk_2}] -rise_to [get_clocks {_122MHz}] -setup 0.110  
-set_clock_uncertainty -rise_from [get_clocks {Attenuator:Attenuator_ADC2|clk_2}] -rise_to [get_clocks {_122MHz}] -hold 0.080  
-set_clock_uncertainty -rise_from [get_clocks {Attenuator:Attenuator_ADC2|clk_2}] -fall_to [get_clocks {_122MHz}] -setup 0.110  
-set_clock_uncertainty -rise_from [get_clocks {Attenuator:Attenuator_ADC2|clk_2}] -fall_to [get_clocks {_122MHz}] -hold 0.080  
-set_clock_uncertainty -rise_from [get_clocks {Attenuator:Attenuator_ADC2|clk_2}] -rise_to [get_clocks {Attenuator:Attenuator_ADC2|clk_2}]  0.020  
-set_clock_uncertainty -rise_from [get_clocks {Attenuator:Attenuator_ADC2|clk_2}] -fall_to [get_clocks {Attenuator:Attenuator_ADC2|clk_2}]  0.020  
-set_clock_uncertainty -fall_from [get_clocks {Attenuator:Attenuator_ADC2|clk_2}] -rise_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}]  0.020  
-set_clock_uncertainty -fall_from [get_clocks {Attenuator:Attenuator_ADC2|clk_2}] -fall_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}]  0.020  
-set_clock_uncertainty -fall_from [get_clocks {Attenuator:Attenuator_ADC2|clk_2}] -rise_to [get_clocks {_122MHz}] -setup 0.110  
-set_clock_uncertainty -fall_from [get_clocks {Attenuator:Attenuator_ADC2|clk_2}] -rise_to [get_clocks {_122MHz}] -hold 0.080  
-set_clock_uncertainty -fall_from [get_clocks {Attenuator:Attenuator_ADC2|clk_2}] -fall_to [get_clocks {_122MHz}] -setup 0.110  
-set_clock_uncertainty -fall_from [get_clocks {Attenuator:Attenuator_ADC2|clk_2}] -fall_to [get_clocks {_122MHz}] -hold 0.080  
-set_clock_uncertainty -fall_from [get_clocks {Attenuator:Attenuator_ADC2|clk_2}] -rise_to [get_clocks {Attenuator:Attenuator_ADC2|clk_2}]  0.020  
-set_clock_uncertainty -fall_from [get_clocks {Attenuator:Attenuator_ADC2|clk_2}] -fall_to [get_clocks {Attenuator:Attenuator_ADC2|clk_2}]  0.020  
-set_clock_uncertainty -rise_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[2]}] -rise_to [get_clocks {_122MHz}] -setup 0.110  
-set_clock_uncertainty -rise_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[2]}] -rise_to [get_clocks {_122MHz}] -hold 0.080  
-set_clock_uncertainty -rise_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[2]}] -fall_to [get_clocks {_122MHz}] -setup 0.110  
-set_clock_uncertainty -rise_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[2]}] -fall_to [get_clocks {_122MHz}] -hold 0.080  
-set_clock_uncertainty -rise_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[2]}] -rise_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[2]}]  0.020  
-set_clock_uncertainty -rise_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[2]}] -fall_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[2]}]  0.020  
-set_clock_uncertainty -fall_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[2]}] -rise_to [get_clocks {_122MHz}] -setup 0.110  
-set_clock_uncertainty -fall_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[2]}] -rise_to [get_clocks {_122MHz}] -hold 0.080  
-set_clock_uncertainty -fall_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[2]}] -fall_to [get_clocks {_122MHz}] -setup 0.110  
-set_clock_uncertainty -fall_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[2]}] -fall_to [get_clocks {_122MHz}] -hold 0.080  
-set_clock_uncertainty -fall_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[2]}] -rise_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[2]}]  0.020  
-set_clock_uncertainty -fall_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[2]}] -fall_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[2]}]  0.020  
-set_clock_uncertainty -rise_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[1]}] -rise_to [get_clocks {_122MHz}] -setup 0.110  
-set_clock_uncertainty -rise_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[1]}] -rise_to [get_clocks {_122MHz}] -hold 0.080  
-set_clock_uncertainty -rise_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[1]}] -fall_to [get_clocks {_122MHz}] -setup 0.110  
-set_clock_uncertainty -rise_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[1]}] -fall_to [get_clocks {_122MHz}] -hold 0.080  
-set_clock_uncertainty -rise_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[1]}] -rise_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[1]}]  0.020  
-set_clock_uncertainty -rise_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[1]}] -fall_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[1]}]  0.020  
-set_clock_uncertainty -fall_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[1]}] -rise_to [get_clocks {_122MHz}] -setup 0.110  
-set_clock_uncertainty -fall_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[1]}] -rise_to [get_clocks {_122MHz}] -hold 0.080  
-set_clock_uncertainty -fall_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[1]}] -fall_to [get_clocks {_122MHz}] -setup 0.110  
-set_clock_uncertainty -fall_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[1]}] -fall_to [get_clocks {_122MHz}] -hold 0.080  
-set_clock_uncertainty -fall_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[1]}] -rise_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[1]}]  0.020  
-set_clock_uncertainty -fall_from [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[1]}] -fall_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[1]}]  0.020  
-set_clock_uncertainty -rise_from [get_clocks {spc[2]}] -rise_to [get_clocks {_122MHz}]  0.040  
-set_clock_uncertainty -rise_from [get_clocks {spc[2]}] -fall_to [get_clocks {_122MHz}]  0.040  
-set_clock_uncertainty -rise_from [get_clocks {spc[2]}] -rise_to [get_clocks {spc[2]}]  0.030  
-set_clock_uncertainty -rise_from [get_clocks {spc[2]}] -fall_to [get_clocks {spc[2]}]  0.030  
-set_clock_uncertainty -rise_from [get_clocks {spc[2]}] -rise_to [get_clocks {Angelia_clk_lrclk_gen:clrgen|BCLK}]  0.030  
-set_clock_uncertainty -rise_from [get_clocks {spc[2]}] -fall_to [get_clocks {Angelia_clk_lrclk_gen:clrgen|BCLK}]  0.030  
-set_clock_uncertainty -fall_from [get_clocks {spc[2]}] -rise_to [get_clocks {_122MHz}]  0.040  
-set_clock_uncertainty -fall_from [get_clocks {spc[2]}] -fall_to [get_clocks {_122MHz}]  0.040  
-set_clock_uncertainty -fall_from [get_clocks {spc[2]}] -rise_to [get_clocks {spc[2]}]  0.030  
-set_clock_uncertainty -fall_from [get_clocks {spc[2]}] -fall_to [get_clocks {spc[2]}]  0.030  
-set_clock_uncertainty -fall_from [get_clocks {spc[2]}] -rise_to [get_clocks {Angelia_clk_lrclk_gen:clrgen|BCLK}]  0.030  
-set_clock_uncertainty -fall_from [get_clocks {spc[2]}] -fall_to [get_clocks {Angelia_clk_lrclk_gen:clrgen|BCLK}]  0.030  
-set_clock_uncertainty -rise_from [get_clocks {Angelia_clk_lrclk_gen:clrgen|BCLK}] -rise_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -setup 0.080  
-set_clock_uncertainty -rise_from [get_clocks {Angelia_clk_lrclk_gen:clrgen|BCLK}] -rise_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -hold 0.100  
-set_clock_uncertainty -rise_from [get_clocks {Angelia_clk_lrclk_gen:clrgen|BCLK}] -fall_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -setup 0.080  
-set_clock_uncertainty -rise_from [get_clocks {Angelia_clk_lrclk_gen:clrgen|BCLK}] -fall_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -hold 0.100  
-set_clock_uncertainty -rise_from [get_clocks {Angelia_clk_lrclk_gen:clrgen|BCLK}] -rise_to [get_clocks {_122MHz}]  0.040  
-set_clock_uncertainty -rise_from [get_clocks {Angelia_clk_lrclk_gen:clrgen|BCLK}] -fall_to [get_clocks {_122MHz}]  0.040  
-set_clock_uncertainty -rise_from [get_clocks {Angelia_clk_lrclk_gen:clrgen|BCLK}] -rise_to [get_clocks {LTC2208_122MHz}]  0.020  
-set_clock_uncertainty -rise_from [get_clocks {Angelia_clk_lrclk_gen:clrgen|BCLK}] -fall_to [get_clocks {LTC2208_122MHz}]  0.020  
-set_clock_uncertainty -rise_from [get_clocks {Angelia_clk_lrclk_gen:clrgen|BCLK}] -rise_to [get_clocks {spc[2]}]  0.030  
-set_clock_uncertainty -rise_from [get_clocks {Angelia_clk_lrclk_gen:clrgen|BCLK}] -fall_to [get_clocks {spc[2]}]  0.030  
-set_clock_uncertainty -rise_from [get_clocks {Angelia_clk_lrclk_gen:clrgen|BCLK}] -rise_to [get_clocks {Angelia_clk_lrclk_gen:clrgen|BCLK}]  0.030  
-set_clock_uncertainty -rise_from [get_clocks {Angelia_clk_lrclk_gen:clrgen|BCLK}] -fall_to [get_clocks {Angelia_clk_lrclk_gen:clrgen|BCLK}]  0.030  
-set_clock_uncertainty -fall_from [get_clocks {Angelia_clk_lrclk_gen:clrgen|BCLK}] -rise_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -setup 0.080  
-set_clock_uncertainty -fall_from [get_clocks {Angelia_clk_lrclk_gen:clrgen|BCLK}] -rise_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -hold 0.100  
-set_clock_uncertainty -fall_from [get_clocks {Angelia_clk_lrclk_gen:clrgen|BCLK}] -fall_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -setup 0.080  
-set_clock_uncertainty -fall_from [get_clocks {Angelia_clk_lrclk_gen:clrgen|BCLK}] -fall_to [get_clocks {PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0]}] -hold 0.100  
-set_clock_uncertainty -fall_from [get_clocks {Angelia_clk_lrclk_gen:clrgen|BCLK}] -rise_to [get_clocks {_122MHz}]  0.040  
-set_clock_uncertainty -fall_from [get_clocks {Angelia_clk_lrclk_gen:clrgen|BCLK}] -fall_to [get_clocks {_122MHz}]  0.040  
-set_clock_uncertainty -fall_from [get_clocks {Angelia_clk_lrclk_gen:clrgen|BCLK}] -rise_to [get_clocks {LTC2208_122MHz}]  0.020  
-set_clock_uncertainty -fall_from [get_clocks {Angelia_clk_lrclk_gen:clrgen|BCLK}] -fall_to [get_clocks {LTC2208_122MHz}]  0.020  
-set_clock_uncertainty -fall_from [get_clocks {Angelia_clk_lrclk_gen:clrgen|BCLK}] -rise_to [get_clocks {spc[2]}]  0.030  
-set_clock_uncertainty -fall_from [get_clocks {Angelia_clk_lrclk_gen:clrgen|BCLK}] -fall_to [get_clocks {spc[2]}]  0.030  
-set_clock_uncertainty -fall_from [get_clocks {Angelia_clk_lrclk_gen:clrgen|BCLK}] -rise_to [get_clocks {Angelia_clk_lrclk_gen:clrgen|BCLK}]  0.030  
-set_clock_uncertainty -fall_from [get_clocks {Angelia_clk_lrclk_gen:clrgen|BCLK}] -fall_to [get_clocks {Angelia_clk_lrclk_gen:clrgen|BCLK}]  0.030  
-set_clock_uncertainty -rise_from [get_clocks {PLL_inst|altpll_component|auto_generated|pll1|clk[0]}] -rise_to [get_clocks {_122MHz}]  0.020  
-set_clock_uncertainty -rise_from [get_clocks {PLL_inst|altpll_component|auto_generated|pll1|clk[0]}] -fall_to [get_clocks {_122MHz}]  0.020  
-set_clock_uncertainty -fall_from [get_clocks {PLL_inst|altpll_component|auto_generated|pll1|clk[0]}] -rise_to [get_clocks {_122MHz}]  0.020  
-set_clock_uncertainty -fall_from [get_clocks {PLL_inst|altpll_component|auto_generated|pll1|clk[0]}] -fall_to [get_clocks {_122MHz}]  0.020  
-
-
-
-
-#**************************************************************
-# Set Input Delay
-#**************************************************************
-set_input_delay -add_delay -max -clock virt_PHY_RX_CLOCK 1.000 {PHY_CLK125 PHY_MDIO PHY_RX[*] RX_DV PHY_INT_N ASMI_interface:ASMI_int_inst|ASMI:ASMI_inst|ASMI_altasmi_parallel_cv82:ASMI_altasmi_parallel_cv82_component|cycloneii_asmiblock2~ALTERA_DATA0}
-set_input_delay -add_delay -min -clock virt_PHY_RX_CLOCK -1.000 {PHY_CLK125 PHY_MDIO PHY_RX[*] RX_DV PHY_INT_N ASMI_interface:ASMI_int_inst|ASMI:ASMI_inst|ASMI_altasmi_parallel_cv82:ASMI_altasmi_parallel_cv82_component|cycloneii_asmiblock2~ALTERA_DATA0}
-#
-set_input_delay -add_delay -max -clock virt_122MHz 1.000 {ADCMISO ANT_TUNE CDOUT INA[*] INA_2[*] IO4 IO5 IO6 IO7 IO8 KEY_DASH KEY_DOT OVERFLOW OVERFLOW_2 PTT SO SPI_SDI MODE2}
-set_input_delay -add_delay -min -clock virt_122MHz -1.000 {ADCMISO ANT_TUNE CDOUT INA[*] INA_2[*] IO4 IO5 IO6 IO7 IO8 KEY_DASH KEY_DOT OVERFLOW OVERFLOW_2 PTT SO SPI_SDI MODE2}
-#
-#**************************************************************
-# Set Output Delay
-#**************************************************************
-#
-set_output_delay -add_delay -max -clock PHY_CLK125 1.000 {PHY_MDIO PHY_TX[*] PHY_TX_EN PHY_TX_CLOCK PHY_MDC ASMI_interface:ASMI_int_inst|ASMI:ASMI_inst|ASMI_altasmi_parallel_cv82:ASMI_altasmi_parallel_cv82_component|cycloneii_asmiblock2~ALTERA_SCE ASMI_interface:ASMI_int_inst|ASMI:ASMI_inst|ASMI_altasmi_parallel_cv82:ASMI_altasmi_parallel_cv82_component|cycloneii_asmiblock2~ALTERA_SDO ASMI_interface:ASMI_int_inst|ASMI:ASMI_inst|ASMI_altasmi_parallel_cv82:ASMI_altasmi_parallel_cv82_component|cycloneii_asmiblock2~ALTERA_DCLK}
-set_output_delay -add_delay -min -clock PHY_CLK125 -1.000 {PHY_MDIO PHY_TX[*] PHY_TX_EN PHY_TX_CLOCK PHY_MDC ASMI_interface:ASMI_int_inst|ASMI:ASMI_inst|ASMI_altasmi_parallel_cv82:ASMI_altasmi_parallel_cv82_component|cycloneii_asmiblock2~ALTERA_SCE ASMI_interface:ASMI_int_inst|ASMI:ASMI_inst|ASMI_altasmi_parallel_cv82:ASMI_altasmi_parallel_cv82_component|cycloneii_asmiblock2~ALTERA_SDO ASMI_interface:ASMI_int_inst|ASMI:ASMI_inst|ASMI_altasmi_parallel_cv82:ASMI_altasmi_parallel_cv82_component|cycloneii_asmiblock2~ALTERA_DCLK}
- 
-set_output_delay -add_delay -max -clock _122MHz 1.000 [get_ports {ADCCLK ADCMOSI ATTN_CLK ATTN_CLK_2 ATTN_DATA ATTN_DATA_2  ATTN_LE ATTN_LE_2  CBCLK CDIN CLRCIN CLRCOUT CMCLK CS DACD[*] DEBUG_LED* DITH DITH_2 FPGA_PLL FPGA_PTT J15_5 J15_6 MICBIAS_ENABLE MICBIAS_SELECT MIC_SIG_SELECT MOSI NCONFIG PTT_SELECT RAND RAND_2 SCK SI SPI_SCK SPI_SDO SSCK Status_LED USEROUT* nADCCS nCS DAC_ALC}]
-set_output_delay -add_delay -min -clock _122MHz -1.000 [get_ports {ADCCLK ADCMOSI ATTN_CLK ATTN_CLK_2 ATTN_DATA ATTN_DATA_2 ATTN_LE ATTN_LE_2 CBCLK CDIN CLRCIN CLRCOUT CMCLK CS DACD[*] DEBUG_LED* DITH DITH_2 FPGA_PLL FPGA_PTT J15_5 J15_6 MICBIAS_ENABLE MICBIAS_SELECT MIC_SIG_SELECT MOSI NCONFIG PTT_SELECT RAND RAND_2 SCK SI SPI_SCK SPI_SDO SSCK Status_LED USEROUT* nADCCS nCS DAC_ALC}]
-#
 
 #**************************************************************
 # Set Clock Groups
 #**************************************************************
+
 set_clock_groups -asynchronous  -group { \
 					LTC2208_122MHz \
 					LTC2208_122MHz_2 \
@@ -591,6 +60,8 @@ set_clock_groups -asynchronous  -group { \
 					spc[2] \
 					Attenuator:Attenuator_ADC1|clk_2 \
 					Attenuator:Attenuator_ADC2|clk_2 \
+					pro_count[2] \ 
+					sidetone:sidetone_inst|sidetone_clock \
 				       } \
 				-group { \
 					PHY_RX_CLOCK \
@@ -606,138 +77,120 @@ set_clock_groups -asynchronous  -group { \
 
 
 #**************************************************************
-# Set False Path
+# Set Input Delay
 #**************************************************************
-set_false_path -from [get_keepers {*rdptr_g*}] -to [get_keepers {*ws_dgrp|dffpipe_re9:dffpipe16|dffe17a*}]
-set_false_path -from [get_keepers {*delayed_wrptr_g*}] -to [get_keepers {*rs_dgwp|dffpipe_qe9:dffpipe13|dffe14a*}]
-set_false_path -from [get_keepers {*rdptr_g*}] -to [get_keepers {*ws_dgrp|dffpipe_1f9:dffpipe17|dffe18a*}]
-set_false_path -from [get_keepers {*delayed_wrptr_g*}] -to [get_keepers {*rs_dgwp|dffpipe_0f9:dffpipe14|dffe15a*}]
-set_false_path -from [get_keepers {*rdptr_g*}] -to [get_keepers {*ws_dgrp|dffpipe_4f9:dffpipe13|dffe14a*}]
-set_false_path -from [get_keepers {*delayed_wrptr_g*}] -to [get_keepers {*rs_dgwp|dffpipe_3f9:dffpipe10|dffe11a*}]
-set_false_path -from [get_keepers {*rdptr_g*}] -to [get_keepers {*ws_dgrp|dffpipe_fd9:dffpipe15|dffe16a*}]
-set_false_path -from [get_keepers {*delayed_wrptr_g*}] -to [get_keepers {*rs_dgwp|dffpipe_ed9:dffpipe12|dffe13a*}]
-set_false_path -from [get_keepers {*rdptr_g*}] -to [get_keepers {*ws_dgrp|dffpipe_ve9:dffpipe19|dffe20a*}]
-set_false_path -from [get_keepers {*delayed_wrptr_g*}] -to [get_keepers {*rs_dgwp|dffpipe_te9:dffpipe15|dffe16a*}]
+
+set_input_delay -add_delay -max -clock virt_PHY_RX_CLOCK 1.000 {PHY_CLK125 PHY_MDIO PHY_RX[*] RX_DV PHY_INT_N ASMI_interface:ASMI_int_inst|ASMI:ASMI_inst|ASMI_altasmi_parallel_cv82:ASMI_altasmi_parallel_cv82_component|cycloneii_asmiblock2~ALTERA_DATA0}
+set_input_delay -add_delay -min -clock virt_PHY_RX_CLOCK -1.000 {PHY_CLK125 PHY_MDIO PHY_RX[*] RX_DV PHY_INT_N ASMI_interface:ASMI_int_inst|ASMI:ASMI_inst|ASMI_altasmi_parallel_cv82:ASMI_altasmi_parallel_cv82_component|cycloneii_asmiblock2~ALTERA_DATA0}
+
+set_input_delay -add_delay -max -clock virt_122MHz 1.000 {ADCMISO ANT_TUNE CDOUT INA[*] INA_2[*] IO4 IO5 IO6 IO7 IO8 KEY_DASH KEY_DOT OVERFLOW OVERFLOW_2 PTT SO SPI_SDI MODE2}
+set_input_delay -add_delay -min -clock virt_122MHz -1.000 {ADCMISO ANT_TUNE CDOUT INA[*] INA_2[*] IO4 IO5 IO6 IO7 IO8 KEY_DASH KEY_DOT OVERFLOW OVERFLOW_2 PTT SO SPI_SDI MODE2}
+
 
 
 #**************************************************************
-# Set Multicycle Path
+# Set Output Delay
 #**************************************************************
-set_multicycle_path -from spc[2] -to _122MHz -setup 4
-set_multicycle_path -from spc[2] -to _122MHz -hold 3
 
-set_multicycle_path -from Attenuator:Attenuator_ADC1|clk_2 -to _122MHz -setup 4
-set_multicycle_path -from Attenuator:Attenuator_ADC1|clk_2 -to _122MHz -hold 3
-
-set_multicycle_path -from Attenuator:Attenuator_ADC2|clk_2 -to _122MHz -setup 4
-set_multicycle_path -from Attenuator:Attenuator_ADC2|clk_2 -to _122MHz -hold 3
-
-set_multicycle_path -from PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2] -to PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] -setup 2
-set_multicycle_path -from PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2] -to PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] -hold 1
-
-set_multicycle_path -from PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2] -to PLL_IF_inst|altpll_component|auto_generated|pll1|clk[2] -setup 2
-set_multicycle_path -from PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2] -to PLL_IF_inst|altpll_component|auto_generated|pll1|clk[2] -hold 1
-
-#set_multicycle_path -from LTC2208_122MHz -to PLL_IF_inst|altpll_component|auto_generated|pll1|clk[2] -start -setup 2
-#set_multicycle_path -from LTC2208_122MHz -to PLL_IF_inst|altpll_component|auto_generated|pll1|clk[2] -start -hold 1
-
-set_multicycle_path -from LTC2208_122MHz -to PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]  -setup 2
-set_multicycle_path -from LTC2208_122MHz -to PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2]  -hold 1
+set_output_delay -add_delay -max -clock PHY_CLK125 1.000 {PHY_MDIO PHY_TX[*] PHY_TX_EN PHY_TX_CLOCK PHY_MDC ASMI_interface:ASMI_int_inst|ASMI:ASMI_inst|ASMI_altasmi_parallel_cv82:ASMI_altasmi_parallel_cv82_component|cycloneii_asmiblock2~ALTERA_SCE ASMI_interface:ASMI_int_inst|ASMI:ASMI_inst|ASMI_altasmi_parallel_cv82:ASMI_altasmi_parallel_cv82_component|cycloneii_asmiblock2~ALTERA_SDO ASMI_interface:ASMI_int_inst|ASMI:ASMI_inst|ASMI_altasmi_parallel_cv82:ASMI_altasmi_parallel_cv82_component|cycloneii_asmiblock2~ALTERA_DCLK}
+set_output_delay -add_delay -min -clock PHY_CLK125 -1.000 {PHY_MDIO PHY_TX[*] PHY_TX_EN PHY_TX_CLOCK PHY_MDC ASMI_interface:ASMI_int_inst|ASMI:ASMI_inst|ASMI_altasmi_parallel_cv82:ASMI_altasmi_parallel_cv82_component|cycloneii_asmiblock2~ALTERA_SCE ASMI_interface:ASMI_int_inst|ASMI:ASMI_inst|ASMI_altasmi_parallel_cv82:ASMI_altasmi_parallel_cv82_component|cycloneii_asmiblock2~ALTERA_SDO ASMI_interface:ASMI_int_inst|ASMI:ASMI_inst|ASMI_altasmi_parallel_cv82:ASMI_altasmi_parallel_cv82_component|cycloneii_asmiblock2~ALTERA_DCLK}
+ 
+set_output_delay -add_delay -max -clock _122MHz 1.000 [get_ports {ADCCLK ADCMOSI ATTN_CLK ATTN_CLK_2 ATTN_DATA ATTN_DATA_2  ATTN_LE ATTN_LE_2  CBCLK CDIN CLRCIN CLRCOUT CMCLK CS DACD[*] DEBUG_LED* DITH DITH_2 FPGA_PLL FPGA_PTT J15_5 J15_6 MICBIAS_ENABLE MICBIAS_SELECT MIC_SIG_SELECT MOSI NCONFIG PTT_SELECT RAND RAND_2 SCK SI SPI_SCK SPI_SDO SSCK Status_LED USEROUT* nADCCS nCS DAC_ALC}]
+set_output_delay -add_delay -min -clock _122MHz -1.000 [get_ports {ADCCLK ADCMOSI ATTN_CLK ATTN_CLK_2 ATTN_DATA ATTN_DATA_2 ATTN_LE ATTN_LE_2 CBCLK CDIN CLRCIN CLRCOUT CMCLK CS DACD[*] DEBUG_LED* DITH DITH_2 FPGA_PLL FPGA_PTT J15_5 J15_6 MICBIAS_ENABLE MICBIAS_SELECT MIC_SIG_SELECT MOSI NCONFIG PTT_SELECT RAND RAND_2 SCK SI SPI_SCK SPI_SDO SSCK Status_LED USEROUT* nADCCS nCS DAC_ALC}]
 
 
-#**************************************************************
-# Set Maximum Delay
-#**************************************************************
-#
-set_max_delay -from _122MHz -to _122MHz 20
+
+#**************************************************************************************
+# Set Maximum Delay (for setup or recovery; low-level, over-riding timing adjustments)
+#**************************************************************************************
+
+set_max_delay -from _122MHz -to _122MHz 15
 
 set_max_delay -from Angelia_clk_lrclk_gen:clrgen|BCLK -to PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] 17
-set_max_delay -from Angelia_clk_lrclk_gen:clrgen|BCLK -to _122MHz 15
+set_max_delay -from Angelia_clk_lrclk_gen:clrgen|BCLK -to _122MHz 16
 
+set_max_delay -from Attenuator:Attenuator_ADC1|clk_2 -to _122MHz 18
 set_max_delay -from Attenuator:Attenuator_ADC1|clk_2 -to PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] 4
+
+set_max_delay -from Attenuator:Attenuator_ADC2|clk_2 -to _122MHz 14
 set_max_delay -from Attenuator:Attenuator_ADC2|clk_2 -to PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] 4
 
-set_max_delay -from LTC2208_122MHz -to LTC2208_122MHz 15
-set_max_delay -from LTC2208_122MHz -to spc[2] 23
-#set_max_delay -from LTC2208_122MHz -to PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2] 21
-set_max_delay -from LTC2208_122MHz -to PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] 8
+set_max_delay -from PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] -to LTC2208_122MHz 48
 
-set_max_delay -from LTC2208_122MHz_2 -to LTC2208_122MHz 15
+set_max_delay -from LTC2208_122MHz -to LTC2208_122MHz 16
+set_max_delay -from LTC2208_122MHz -to PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2] 9
+set_max_delay -from LTC2208_122MHz -to PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] 10
+
+set_max_delay -from LTC2208_122MHz_2 -to LTC2208_122MHz 16
 set_max_delay -from LTC2208_122MHz_2 -to LTC2208_122MHz_2 11
-set_max_delay -from LTC2208_122MHz_2 -to PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] 7
+set_max_delay -from LTC2208_122MHz_2 -to PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] 8
 
-set_max_delay -from PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0] -to PHY_CLK125 25
+set_max_delay -from PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0] -to PHY_CLK125 17
 set_max_delay -from PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0] -to _122MHz 31
 set_max_delay -from PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1] -to _122MHz 28
-set_max_delay -from PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1] -to PHY_CLK125 21
-set_max_delay -from PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1] -to PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] 14
+set_max_delay -from PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1] -to PHY_CLK125 18
 
-set_max_delay -from PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] -to Attenuator:Attenuator_ADC1|clk_2 9
+set_max_delay -from PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1] -to PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] 13
+
+set_max_delay -from PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2] -to PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] 22
+set_max_delay -from PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2] -to PLL_IF_inst|altpll_component|auto_generated|pll1|clk[2] 16
+
+set_max_delay -from PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] -to Attenuator:Attenuator_ADC1|clk_2 10
 set_max_delay -from PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] -to Attenuator:Attenuator_ADC2|clk_2 3
-set_max_delay -from PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] -to PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2] 18
-set_max_delay -from PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] -to PLL_IF_inst|altpll_component|auto_generated|pll1|clk[1] 6
-set_max_delay -from PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] -to PLL_IF_inst|altpll_component|auto_generated|pll1|clk[2] 18
+set_max_delay -from PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] -to PLL_IF_inst|altpll_component|auto_generated|pll1|clk[1] 7
+set_max_delay -from PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] -to PLL_IF_inst|altpll_component|auto_generated|pll1|clk[2] 11
 set_max_delay -from PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] -to _122MHz 17
-set_max_delay -from PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] -to LTC2208_122MHz 5
 set_max_delay -from PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] -to LTC2208_122MHz_2 5
-set_max_delay -from PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] -to spc[2] 0
-set_max_delay -from PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] -to PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2] 19
-set_max_delay -from PLL_IF_inst|altpll_component|auto_generated|pll1|clk[2] -to _122MHz 15
+set_max_delay -from PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] -to pro_count[2] 11
+set_max_delay -from PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] -to PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2] 10
 
-#set_max_delay -from spc[2] -to _122MHz 31
+set_max_delay -from PLL_IF_inst|altpll_component|auto_generated|pll1|clk[2] -to _122MHz 12
 
+set_max_delay -from pro_count[2] -to PLL_IF_inst|altpll_component|auto_generated|pll1|clk[2] 16
+set_max_delay -from pro_count[2] -to PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] 14
+set_max_delay -from pro_count[2] -to _122MHz 21
+set_max_delay -from pro_count[2] -to sidetone:sidetone_inst|sidetone_clock 12
+set_max_delay -from pro_count[2] -to LTC2208_122MHz 14
+
+set_max_delay -from sidetone:sidetone_inst|sidetone_clock -to LTC2208_122MHz 17
+
+set_max_delay -from spc[2] -to _122MHz 31
+
+set_max_delay -from virt_122MHz -to pro_count[2] 15
 set_max_delay -from virt_122MHz -to PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] 15
 set_max_delay -from virt_122MHz -to PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0] 4
 
-set_max_delay -from virt_PHY_RX_CLOCK -to PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] 14
+set_max_delay -from virt_PHY_RX_CLOCK -to PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] 11
 
-#**************************************************************
-# Set Minimum Delay
-#**************************************************************
-#
+
+
+#************************************************************************************
+# Set Minimum Delay (for hold or removal; low-level, over-riding timing adjustments)
+#************************************************************************************
+
 set_min_delay -from _122MHz -to _122MHz -2
-
-set_min_delay -from Angelia_clk_lrclk_gen:clrgen|BCLK -to PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] 2
-set_min_delay -from Angelia_clk_lrclk_gen:clrgen|BCLK -to _122MHz 4
 
 set_min_delay -from Attenuator:Attenuator_ADC1|clk_2 -to PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] -2
 set_min_delay -from Attenuator:Attenuator_ADC2|clk_2 -to PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] -2
 
 set_min_delay -from LTC2208_122MHz -to LTC2208_122MHz -2
-set_min_delay -from LTC2208_122MHz -to spc[2] -3
-#set_min_delay -from LTC2208_122MHz -to PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2] 11
-set_min_delay -from LTC2208_122MHz -to PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] 1
+set_min_delay -from LTC2208_122MHz -to spc[2] -7
 
 set_min_delay -from LTC2208_122MHz_2 -to LTC2208_122MHz -2
 set_min_delay -from LTC2208_122MHz_2 -to LTC2208_122MHz_2 -2
-set_min_delay -from LTC2208_122MHz_2 -to PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] 1
 
-set_min_delay -from PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0] -to PHY_CLK125 4
-set_min_delay -from PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0] -to _122MHz 10
-set_min_delay -from PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0] -to PHY_CLK125 1
-set_min_delay -from PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1] -to _122MHz 10
-set_min_delay -from PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[1] -to PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] 2
-
-set_min_delay -from PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] -to Attenuator:Attenuator_ADC1|clk_2 1
-set_min_delay -from PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] -to Attenuator:Attenuator_ADC2|clk_2 -4
-set_min_delay -from PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] -to PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2] 4
+set_min_delay -from PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] -to Attenuator:Attenuator_ADC2|clk_2 -5
 set_min_delay -from PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] -to PLL_IF_inst|altpll_component|auto_generated|pll1|clk[1] -2
-set_min_delay -from PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] -to PLL_IF_inst|altpll_component|auto_generated|pll1|clk[2] -1
-set_min_delay -from PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] -to _122MHz 0
-set_min_delay -from PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] -to LTC2208_122MHz -4
-set_min_delay -from PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] -to LTC2208_122MHz_2 -4
+set_min_delay -from PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] -to PLL_IF_inst|altpll_component|auto_generated|pll1|clk[2] -5
+set_min_delay -from PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] -to LTC2208_122MHz -5
+set_min_delay -from PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] -to LTC2208_122MHz_2 -6
 set_min_delay -from PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] -to spc[2] -14
-set_min_delay -from PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] -to PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2] 0
-set_min_delay -from PLL_IF_inst|altpll_component|auto_generated|pll1|clk[2] -to _122MHz 0
+set_min_delay -from PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] -to pro_count[2] -3
+set_min_delay -from PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] -to _122MHz -3
 
-#set_min_delay -from spc[2] -to _122MHz 19
+set_min_delay -from pro_count[2] -to spc[2] -9
 
-set_min_delay -from virt_122MHz -to PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] 1
+set_min_delay -from sidetone:sidetone_inst|sidetone_clock -to LTC2208_122MHz -6
+
 set_min_delay -from virt_122MHz -to PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0] -6
-
-set_min_delay -from virt_PHY_RX_CLOCK -to PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] -2
-
-#**************************************************************
-# Set Input Transition
-#**************************************************************
 

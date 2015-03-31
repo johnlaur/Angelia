@@ -24,7 +24,7 @@
 //  along with this program; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-// (C) Phil Harman VK6APH, Kirk Weedman KD7IRS  2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013 
+// (C) Phil Harman VK6APH/VK6PH, Kirk Weedman KD7IRS  2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014 
 
 
 
@@ -169,6 +169,9 @@
 	6 Mar 2014		- Fully constrained the firmware design with constaints in the Angelia.sdc file, added delays to meet timing on 
 						  all failing paths, timing is met 100%
 						- changed version number to v3.0
+  17 Apr 2014     - Added firmware CW sidetone and RF generation. Fixed bug in frequency phase word that caused 1/2Hz error
+						- constrained the firmware design, closed timing, new Angelia.sdc constraints file
+						- changed version number to V3.1
 						
 	
 *** change global clock name **** 
@@ -380,7 +383,7 @@ assign  IO1 = 1'b0;  						// low to enable, high to mute
 parameter M_TPD   = 4;
 parameter IF_TPD  = 2;
 
-parameter  Angelia_version = 8'd30;		// Serial number of this version
+parameter  Angelia_version = 8'd31;		// Serial number of this version
 localparam Penny_serialno = 8'd00;		// Use same value as equ1valent Penny code 
 localparam Merc_serialno = 8'd00;		// Use same value as equivalent Mercury code
 
@@ -442,8 +445,15 @@ assign SPI_clk = spc[2];
 
 wire	Apollo_clk;
 wire 	IF_locked;
+wire pro_clock_8;
+wire pro_clock;	
+reg [2:0] pro_count = 0;
 // Generate IF_clk (48MHz), CMCKL (12.288MHz) and Apollo_clk(30kHz) from 122.88MHz using PLL 
-PLL_IF PLL_IF_inst (.inclk0(C122_clk), .c0(IF_clk), .c1(CMCLK), .c2(Apollo_clk), .locked(IF_locked));
+PLL_IF PLL_IF_inst (.inclk0(C122_clk), .c0(IF_clk), .c1(CMCLK), .c2(Apollo_clk),  .c3(pro_clock_8), .locked(IF_locked));
+// // CW profile clock, divide pro_clock_8 by 8
+always @ (posedge pro_clock_8)
+		pro_count <= pro_count + 3'd1;
+assign pro_clock = pro_count[2];	
 
 //----------------------------PHY Clocks-------------------
 
@@ -1098,14 +1108,33 @@ wire reset_FPGA;
 ASMI_interface  ASMI_int_inst(.clock(Tx_clock), .busy(busy), .erase(erase), .erase_ACK(erase_ACK), .IF_PHY_data(EPCS_data),
 							 .IF_Rx_used(EPCS_Rx_used), .rdreq(EPCS_rdreq), .erase_done(erase_done), .num_blocks(num_blocks),
 							 .erase_done_ACK(erase_done_ACK), .send_more(send_more), .send_more_ACK(send_more_ACK), .NCONFIG(reset_FPGA)); 
+//--------------------------------------------------------------------------------------------
+//  	Calculate  Raised Cosine profile for sidetone and CW envelope when internal CW selected 
+//--------------------------------------------------------------------------------------------
 
+wire CW_char;
+assign CW_char = ((!KEY_DOT | !KEY_DASH) & internal_CW & run);		// set if running, internal_CW is enabled and either CW key is pressed (No debounce)
+wire [15:0] CW_RF;
+wire [15:0] profile;
+wire CW_PTT;
+profile profile_sidetone (.clock(pro_clock), .CW_char(CW_char), .profile(profile),  .delay(8'd0));
+profile profile_CW       (.clock(pro_clock), .CW_char(CW_char), .profile(CW_RF),    .delay(RF_delay), .hang(hang), .PTT(CW_PTT));
+//--------------------------------------------------------
+//			Generate CW sidetone with raised cosine profile
+//--------------------------------------------------------	
+wire signed [15:0] C122_sidetone;
+sidetone sidetone_inst( .clock(C122_clk), .tone_freq(tone_freq), .sidetone_level(sidetone_level), .CW_PTT(CW_PTT),
+                        .C122_sidetone(C122_sidetone),  .profile(profile));					
+// select sidetone  when CW key active and sidetone_level is not zero else Rx audio.
+wire [31:0] Rx_audio;
+assign Rx_audio = CW_PTT && (sidetone_level != 0) ? {C122_sidetone, C122_sidetone}  : C122_LR_data; 
 //---------------------------------------------------------
 //		Send L/R audio to TLV320 in I2S format
 //---------------------------------------------------------
              
 I2S_xmit #(.DATA_BITS(32))  // CLRCLK running at 48KHz
   LR (.rst(C122_rst), .lrclk(CLRCLK), .clk(C122_clk), .CBrise(C122_cbrise),
-      .CBfall(C122_cbfall), .sample(C122_LR_data), .outbit(CDIN));
+		.CBfall(C122_cbfall), .sample(Rx_audio), .outbit(CDIN));
 
       
 //----------------------------------------------------------------------------
@@ -1211,22 +1240,6 @@ cdc_sync #(16)
 cdc_sync #(16)
     Tx_Q  (.siga(IF_Q_PWM), .rstb(C122_rst), .clkb(_122MHz), .sigb(C122_Q_PWM)); // Tx Q data
     
-   
-
-reg signed [15:0]C122_cic_i;
-reg signed [15:0]C122_cic_q;
-wire C122_ce_out_i;
-wire C122_ce_out_q; 
-
-// latch I&Q data on strobe from CIC filters
-always @ (posedge _122MHz)
-begin 
-	if (C122_ce_out_i)
-		C122_cic_i = C122_I_PWM;
-	if (C122_ce_out_q)
-		C122_cic_q = C122_Q_PWM;	
-end 
-
 
 //------------------------------------------------------------------------------
 //                 Pulse generators
@@ -1307,7 +1320,7 @@ wire             test_strobe3;
 	end 
 
 localparam M2 = 32'd1172812403;  // B57 = 2^57.   M2 = B57/122880000
-localparam M3 = 32'd586406201;   // M3 = M2 / 2, used to round the result
+localparam M3 = 32'd16777216;   // M3 = 2^24, used to round the result
 
 generate
   genvar c;
@@ -1590,7 +1603,9 @@ begin
 end 
 
 
-// Interpolate I/Q samples from 48 kHz to the clock frequency
+//---------------------------------------------------------
+//  Interpolate by 8 FIR and interpolate by 320 CIC filters
+//---------------------------------------------------------
 
 wire req1, req2;
 wire [19:0] y1_r, y1_i; 
@@ -1603,29 +1618,8 @@ CicInterpM5 #(.RRRR(320), .IBITS(20), .OBITS(16), .GBITS(34)) in2 ( _122MHz, 1'd
 
 			   
 
-//---------------------------------------------------------
-//  Interpolating CIC filter  R = 2560  N = 5
-//---------------------------------------------------------
-//
-//wire signed [15:0] C122_cic_out_i;
-//wire signed [15:0] C122_cic_out_q;
-//
-//cicint cic_I(.clk(_122MHz), .clk_enable(1'b1), .reset(C122_rst), .filter_in(C122_cic_i),
-//             .filter_out(C122_cic_out_i), .ce_out(C122_ce_out_i));
-//             
-//cicint cic_Q(.clk(_122MHz), .clk_enable(1'b1), .reset(C122_rst), .filter_in(C122_cic_q),
-//             .filter_out(C122_cic_out_q), .ce_out(C122_ce_out_q));
-//             
-//
-//// multiply CIC outputs by 0.9921875, >>> is the Veriloig arithmetic  shift right
-//    
-//wire signed [15:0] C122_out_i;
-//wire signed [15:0] C122_out_q;   
-//
-//assign C122_out_i = C122_cic_out_i - (C122_cic_out_i >>> 7);
-//assign C122_out_q = C122_cic_out_q - (C122_cic_out_q >>> 7);
+//------------------------------------------------------
 
-//---------------------------------------------------------
 //    CORDIC NCO 
 //---------------------------------------------------------
 
@@ -1639,8 +1633,8 @@ wire signed [15:0] Q;
 
 // if in VNA mode use the Rx[0] phase word for the Tx
 assign C122_phase_word_Tx = VNA ? C122_sync_phase_word[0] : C122_sync_phase_word_Tx;
-assign                  I = VNA ? 16'd19274 : y2_i;   	// select VNA mode if active. Set CORDIC for max DAC output
-assign                  Q = VNA ? 0 : y2_r; 					// taking into account CORDICs gain i.e. 0x7FFF/1.7
+assign                  I =  VNA ? 16'd19274 : (CW_PTT ? CW_RF : y2_i);   	// select VNA or CW mode if active. Set CORDIC for max DAC output
+assign                  Q = (VNA | CW_PTT)  ? 16'd0 : y2_r; 					// taking into account CORDICs gain i.e. 0x7FFF/1.7
 
 
 // NOTE:  I and Q inputs reversed to give correct sideband out 
@@ -1664,7 +1658,7 @@ cpl_cordic #(.OUT_WIDTH(16))
 // the CORDIC output is stable on the negative edge of the clock
 
 always @ (negedge _122MHz)
-	DACD = C122_cordic_i_out[13:0];   //gain of 4
+	DACD <= C122_cordic_i_out[13:0];   //gain of 4
 
 
 //------------------------------------------------------------
@@ -1750,7 +1744,7 @@ wire VNA_start = VNA && IF_Rx_save && (IF_Rx_ctrl_0[7:1] == 7'b0000_001);  // in
 Angelia_Tx_fifo_ctrl #(RX_FIFO_SZ, TX_FIFO_SZ) TXFC 
            (IF_rst, IF_clk, IF_tx_fifo_wdata, IF_tx_fifo_wreq, IF_tx_fifo_full,
             IF_tx_fifo_used, IF_tx_fifo_clr, IF_tx_IQ_mic_rdy,
-            IF_tx_IQ_mic_data, IF_chan, IF_last_chan, clean_dash, clean_dot, clean_PTT_in, OVERFLOW,
+            IF_tx_IQ_mic_data, IF_chan, IF_last_chan, clean_dash, clean_dot, (clean_PTT_in | CW_PTT), OVERFLOW,
             Penny_serialno, Merc_serialno, Angelia_version, Penny_ALC, AIN1, AIN2,
             AIN3, AIN4, AIN6, IO4, IO5, IO6, IO8, VNA_start, VNA);
 
@@ -2040,6 +2034,11 @@ reg			Angelia_atten_enable; // enable/disable bit for Angelia attenuator
 reg			TR_relay_disable;		// Alex T/R relay disable option
 reg	[4:0] Angelia_atten2;		// attenuation setting for input attenuator 2 (input atten for ADC2), 0-31 dB
 reg			atten2_enable; 		//enable/disable control for input attenuator 2 (0=disabled, 1= enabled)
+reg         internal_CW;			// set when internal CW generation selected
+reg   [7:0] sidetone_level;		// 0 - 100, sets internal sidetone level
+reg   [7:0] RF_delay;				// 0 - 255, sets delay in mS from CW Key activation to RF out
+reg   [9:0] hang;						// 0 - 1000, sets delay in mS from release of CW Key to dropping of PTT
+reg  [11:0] tone_freq;				// 200 to 2250 Hz, sets sidetone frequency.
 
 always @ (posedge IF_clk)
 begin 
@@ -2079,6 +2078,14 @@ begin
 	 Angelia_atten_enable <= 1'b0;    // default disable Angelia attenuator
 	 Angelia_atten2		<= 5'b0;		// default attenuation setting for input attenuator 2 (input atten for ADC2)
 	 atten2_enable 		<= 1'b0;		// default disable input attenuator 2 
+    internal_CW        <= 1'b0;		// default internal CW generation is off
+    sidetone_level     <= 8'b0;		// default sidetone level is 0
+    RF_delay           <= 8'b0;	   // default CW Key activation to RF out
+    hang               <= 10'b0;		// default hang time 
+	 tone_freq  		  <= 12'b0;		// default sidetone frequency
+
+
+
 	
   end
   else if (IF_Rx_save) 					// all Rx_control bytes are ready to be saved
@@ -2128,8 +2135,24 @@ begin
  	if (IF_Rx_ctrl_0[7:1] == 7'b0001_011)
 	begin
 	  Angelia_atten2   	<= IF_Rx_ctrl_1[4:0];	// attenuation setting for input attenuator 2 (input atten for ADC2)
-	  atten2_enable 	   <= IF_Rx_ctrl_1[5];		// input attenuator 2 enable/disable (0=disabled, 1= enabled)
+ atten2_enable 	   <= IF_Rx_ctrl_1[5];		// input attenuator 2 enable/disable (0=disabled, 1= enabled)
 	end
+	if (IF_Rx_ctrl_0[7:1] == 7'b0001_111)
+	begin
+	  internal_CW       <= IF_Rx_ctrl_1[0];		// decode internal CW 0 = off, 1 = on
+	  sidetone_level    <= IF_Rx_ctrl_2;			// decode CW sidetone volume
+	  RF_delay			  <= IF_Rx_ctrl_3;			// decode delay from pressing CW Key to RF out	
+	end
+	if (IF_Rx_ctrl_0[7:1] == 7'b0010_000)
+	begin
+		hang[9:2]			<= IF_Rx_ctrl_1;			// decode CW hang time, 10 bits
+		hang[1:0]	 		<= IF_Rx_ctrl_2[1:0];
+		tone_freq [11:4]  <= IF_Rx_ctrl_3;			// decode sidetone frequency, 12 bits
+		tone_freq [3:0]   <= IF_Rx_ctrl_4[3:0];	
+	end	
+	
+	
+	
   end
 end	
 
@@ -2197,7 +2220,7 @@ begin
  end
 end
 
-assign FPGA_PTT = IF_Rx_ctrl_0[0]; // IF_Rx_ctrl_0 only updated when we get correct sync sequence
+assign FPGA_PTT = (IF_Rx_ctrl_0[0] | CW_PTT); // IF_Rx_ctrl_0 only updated when we get correct sync sequence. CW_PTT is used when internal CW is selected
 
 
 //------------------------------------------------------------
