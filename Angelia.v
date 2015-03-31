@@ -156,6 +156,9 @@
 						- set version number to v2.2
 	27 Jan 2014		- fixed bug with Rx2 freq assignment via common_Merc_freq bit via C&C byte stream; affected diversity ops
 						- changed version number to v2.3
+	30 Jan 2014		- fixed bug in input assignment for Rx5
+						- fixed bug in phase word assignment for Rx2 and Rx5
+						- changed version number to v2.4
 		
 *** change global clock name **** 
   
@@ -366,7 +369,7 @@ assign  IO1 = 1'b0;  						// low to enable, high to mute
 parameter M_TPD   = 4;
 parameter IF_TPD  = 2;
 
-parameter  Angelia_version = 8'd23;		// Serial number of this version
+parameter  Angelia_version = 8'd24;		// Serial number of this version
 localparam Penny_serialno = 8'd00;		// Use same value as equ1valent Penny code 
 localparam Merc_serialno = 8'd00;		// Use same value as equivalent Mercury code
 
@@ -1268,7 +1271,6 @@ wire      [63:0] C122_ratio_Tx;
 wire      [23:0] rx_I [0:NR-1];
 wire      [23:0] rx_Q [0:NR-1];
 wire             strobe [0:NR-1];
-wire		 [31:0] Rx2_phase_word;
 wire  			  IF_IQ_Data_rdy;
 wire 		 [47:0] IF_IQ_Data;
 wire             test_strobe3;
@@ -1334,10 +1336,16 @@ generate
 endgenerate
 
 //assign phase word for Rx2 depending upon whether common_Merc_freq is asserted
+wire		 [31:0] Rx2_phase_word;
 assign Rx2_phase_word = common_Merc_freq ? C122_sync_phase_word[0] : C122_sync_phase_word[1];
 
+//select input to Rx5 depending upon T/R state
 wire [15:0] select_input;
 assign select_input = FPGA_PTT ?  temp_DACD : temp_ADC[0];
+
+//assign phase word for Rx5 depending upon T/R state
+wire		 [31:0] Rx5_phase_word;
+assign Rx5_phase_word = FPGA_PTT ? C122_sync_phase_word_Tx : C122_sync_phase_word[4];
 
 
 receiver receiver_inst0(   // Rx1
@@ -1400,7 +1408,7 @@ receiver2 receiver_inst3(	// Rx4 -uses by2 & by4
 	//control
 	.clock(C122_clk),
 	.rate(rate),
-	.frequency(C122_sync_phase_word_Tx),
+	.frequency(Rx5_phase_word),
 	.out_strobe(strobe[4]),
 	//input
 	.in_data(select_input),
