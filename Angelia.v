@@ -165,7 +165,10 @@
 						- changed version number to v2.8
 	9 Feb 2014		- added code to double buffer data to the SPI Alex bus across differing clock domains to
 						  improve reliability in filter switching in Alex and ANAN-100D PA
-						- change version number to v2.9
+						- changed version number to v2.9
+	6 Mar 2014		- Fully constrained the firmware design with constaints in the Angelia.sdc file, added delays to meet timing on 
+						  all failing paths, timing is met 100%
+						- changed version number to v3.0
 						
 	
 *** change global clock name **** 
@@ -377,7 +380,7 @@ assign  IO1 = 1'b0;  						// low to enable, high to mute
 parameter M_TPD   = 4;
 parameter IF_TPD  = 2;
 
-parameter  Angelia_version = 8'd29;		// Serial number of this version
+parameter  Angelia_version = 8'd30;		// Serial number of this version
 localparam Penny_serialno = 8'd00;		// Use same value as equ1valent Penny code 
 localparam Merc_serialno = 8'd00;		// Use same value as equivalent Mercury code
 
