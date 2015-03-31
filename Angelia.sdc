@@ -144,6 +144,7 @@ set_max_delay -from PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] -to 
 set_max_delay -from PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] -to LTC2208_122MHz_2 5
 set_max_delay -from PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] -to pro_count[2] 11
 set_max_delay -from PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] -to PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2] 10
+set_max_delay -from PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] -to LTC2208_122MHz 49
 
 set_max_delay -from PLL_IF_inst|altpll_component|auto_generated|pll1|clk[2] -to _122MHz 12
 # new
