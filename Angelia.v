@@ -154,10 +154,9 @@
 						- set version number to v2.1
 	10 Jan 2014		- fixed intermittent hang problem by using Tx_clock in the ARP/PING Always statement (~line 900)
 						- set version number to v2.2
-	
-
-
-	
+	27 Jan 2014		- fixed bug with Rx2 freq assignment via common_Merc_freq bit via C&C byte stream; affected diversity ops
+						- changed version number to v2.3
+		
 *** change global clock name **** 
   
 
@@ -367,7 +366,7 @@ assign  IO1 = 1'b0;  						// low to enable, high to mute
 parameter M_TPD   = 4;
 parameter IF_TPD  = 2;
 
-parameter  Angelia_version = 8'd22;		// Serial number of this version
+parameter  Angelia_version = 8'd23;		// Serial number of this version
 localparam Penny_serialno = 8'd00;		// Use same value as equ1valent Penny code 
 localparam Merc_serialno = 8'd00;		// Use same value as equivalent Mercury code
 
@@ -1311,9 +1310,6 @@ generate
           C122_sync_phase_word[c] <= C122_ratio[c][56:25]; // B57 -> B32 number since R is always >= 0  
       end 		
     end
-
-//assign phase word for Rx2 depending upon whether common_Merc_freq is asserted
-assign Rx2_phase_word = common_Merc_freq ? C122_sync_phase_word[0] : C122_sync_phase_word[1];
 	 
 	cdc_mcp #(48)			// Transfer the receiver data and strobe from C122_clk to IF_clk
 		IQ_sync (.a_data ({rx_I[c], rx_Q[c]}), .a_clk(C122_clk),.b_clk(IF_clk), .a_data_rdy(strobe[c]),
@@ -1337,6 +1333,9 @@ assign Rx2_phase_word = common_Merc_freq ? C122_sync_phase_word[0] : C122_sync_p
   end
 endgenerate
 
+//assign phase word for Rx2 depending upon whether common_Merc_freq is asserted
+assign Rx2_phase_word = common_Merc_freq ? C122_sync_phase_word[0] : C122_sync_phase_word[1];
+
 wire [15:0] select_input;
 assign select_input = FPGA_PTT ?  temp_DACD : temp_ADC[0];
 
@@ -1359,7 +1358,7 @@ receiver receiver_inst1(	// Rx2
 	//control
 	.clock(C122_clk_2),
 	.rate(rate),
-	.frequency(C122_sync_phase_word[1]),
+	.frequency(Rx2_phase_word),
 	.out_strobe(strobe[1]),
 	//input
 	.in_data(temp_ADC[1]),
@@ -2029,7 +2028,7 @@ reg         Alex_6m_preamp; 		// set if manual selection and 6m preamp selected
 reg   [6:0] Alex_manual_LPF;		// Alex LPF relay selection in manual mode
 reg   [5:0] Alex_manual_HPF;		// Alex HPF relay selection in manual mode
 reg   [4:0] Angelia_atten;			// 0-31 dB Heremes attenuator value
-reg			Angelia_atten_enable; // enable/disable bit for Angelia attenuator
+reg			atten_enable; 			// enable/disable bit for Angelia attenuator
 reg			TR_relay_disable;		// Alex T/R relay disable option
 reg	[4:0] Angelia_atten2;		// attenuation setting for input attenuator 2 (input atten for ADC2), 0-31 dB
 reg			atten2_enable; 		//enable/disable control for input attenuator 2 (0=disabled, 1= enabled)
@@ -2055,6 +2054,7 @@ begin
     IF_TX_relay        <= 2'b0;    	// decode Alex Tx Relays
     IF_duplex          <= 1'b0;    	// not in duplex mode
 	 IF_last_chan       <= 3'b000;  	// default single receiver
+	 common_Merc_freq   <= 1'b0;		// default independent freq control for Rx2
     IF_Mic_boost       <= 1'b0;    	// mic boost off 
     IF_Drive_Level     <= 8'b0;	   // drive at minimum
 	 IF_Line_In			  <= 1'b0;		// select Mic input, not Line in
@@ -2069,7 +2069,7 @@ begin
 	 Alex_manual_LPF	  <= 7'b0;		// default manual settings, no Alex LPF filters selected
 	 IF_Line_In_Gain	  <= 5'b0;		// default line-in gain at min
 	 Angelia_atten		  <= 5'b0;		// default zero input attenuation
-	 Angelia_atten_enable <= 1'b0;    // default disable Angelia attenuator
+	 atten_enable 		  <= 1'b0;     // default disable Angelia attenuator
 	 Angelia_atten2		<= 5'b0;		// default attenuation setting for input attenuator 2 (input atten for ADC2)
 	 atten2_enable 		<= 1'b0;		// default disable input attenuator 2 
 	
@@ -2115,8 +2115,8 @@ begin
 	if (IF_Rx_ctrl_0[7:1] == 7'b0001_010)
 	begin
 	  IF_Line_In_Gain   <= IF_Rx_ctrl_2[4:0];		// decode line-in gain setting
-	  Angelia_atten      <= IF_Rx_ctrl_4[4:0];    // decode input attenuation setting
-	  Angelia_atten_enable <= IF_Rx_ctrl_4[5];    // decode Angelia attenuator enable/disable
+	  Angelia_atten     <= IF_Rx_ctrl_4[4:0];    // decode input attenuation setting
+	  atten_enable 	  <= IF_Rx_ctrl_4[5];    	// decode Angelia attenuator enable/disable
 	end
  	if (IF_Rx_ctrl_0[7:1] == 7'b0001_011)
 	begin
@@ -2201,12 +2201,12 @@ assign FPGA_PTT = IF_Rx_ctrl_0[0]; // IF_Rx_ctrl_0 only updated when we get corr
 wire [4:0] atten_data_in;
 wire [4:0] atten2_data_in;
 
-assign atten_data_in = Angelia_atten_enable ? Angelia_atten : (Preamp ? 5'b0_0000 : 5'b1_0100);
+assign atten_data_in = atten_enable ? Angelia_atten : (Preamp ? 5'b0_0000 : 5'b1_0100);
+//assign atten_data_in = atten_enable ? Angelia_atten : 5'b0_0000;
 assign atten2_data_in = atten2_enable ? Angelia_atten2 : 5'b0_0000;
 	
 Attenuator Attenuator_ADC1 (.clk(IF_clk), .data(atten_data_in), .ATTN_CLK(ATTN_CLK), .ATTN_DATA(ATTN_DATA), .ATTN_LE(ATTN_LE));
 Attenuator Attenuator_ADC2 (.clk(IF_clk), .data(atten2_data_in), .ATTN_CLK(ATTN_CLK_2), .ATTN_DATA(ATTN_DATA_2), .ATTN_LE(ATTN_LE_2));
-
 
 //////////////////////////////////////////////////////////////
 //
