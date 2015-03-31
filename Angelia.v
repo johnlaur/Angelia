@@ -172,6 +172,10 @@
   17 Apr 2014     - Added firmware CW sidetone and RF generation. Fixed bug in frequency phase word that caused 1/2Hz error
 						- constrained the firmware design, closed timing, new Angelia.sdc constraints file
 						- changed version number to V3.1
+	8 May 2014     - added Iambic keyer. Enable keying using I[1:0] mapped to dot:dash so that CWX can use the keyer.
+						- changed version number to V3.2
+	10 May 2014		- fixed bug in iambic.v
+						- changed version number to v3.3
 						
 	
 *** change global clock name **** 
@@ -383,7 +387,7 @@ assign  IO1 = 1'b0;  						// low to enable, high to mute
 parameter M_TPD   = 4;
 parameter IF_TPD  = 2;
 
-parameter  Angelia_version = 8'd31;		// Serial number of this version
+parameter  Angelia_version = 8'd33;		// Serial number of this version
 localparam Penny_serialno = 8'd00;		// Use same value as equ1valent Penny code 
 localparam Merc_serialno = 8'd00;		// Use same value as equivalent Mercury code
 
@@ -1108,17 +1112,35 @@ wire reset_FPGA;
 ASMI_interface  ASMI_int_inst(.clock(Tx_clock), .busy(busy), .erase(erase), .erase_ACK(erase_ACK), .IF_PHY_data(EPCS_data),
 							 .IF_Rx_used(EPCS_Rx_used), .rdreq(EPCS_rdreq), .erase_done(erase_done), .num_blocks(num_blocks),
 							 .erase_done_ACK(erase_done_ACK), .send_more(send_more), .send_more_ACK(send_more_ACK), .NCONFIG(reset_FPGA)); 
+							 
+//--------------------------------------------------------------------------------------------
+//  	Iambic CW Keyer
+//--------------------------------------------------------------------------------------------
+// parameter is clock speed in kHz. Keyer data from PC is sent in I channel when in FPGA CW mode. 
+wire keyout;
+wire dot, dash, CWX;
+
+assign dot  = (IF_I_PWM[2] & internal_CW);
+assign dash = (IF_I_PWM[1] & internal_CW);
+assign  CWX = (IF_I_PWM[0] & internal_CW);
+
+
+iambic #(30) iambic_inst (.clock(Apollo_clk), .cw_speed(keyer_speed),  .iambic_mode(keyer_mode), .weight(keyer_weight), 
+                          .letter_space(keyer_spacing), .dot_key(!KEY_DOT | dot), .dash_key(!KEY_DASH | dash),
+								  .CWX(CWX), .paddle_swap(key_reverse), .keyer_out(keyout));
+						  
 //--------------------------------------------------------------------------------------------
 //  	Calculate  Raised Cosine profile for sidetone and CW envelope when internal CW selected 
 //--------------------------------------------------------------------------------------------
 
 wire CW_char;
-assign CW_char = ((!KEY_DOT | !KEY_DASH) & internal_CW & run);		// set if running, internal_CW is enabled and either CW key is pressed (No debounce)
+assign CW_char = (keyout & internal_CW & run);		// set if running, internal_CW is enabled and either CW key is active
 wire [15:0] CW_RF;
 wire [15:0] profile;
 wire CW_PTT;
 profile profile_sidetone (.clock(pro_clock), .CW_char(CW_char), .profile(profile),  .delay(8'd0));
 profile profile_CW       (.clock(pro_clock), .CW_char(CW_char), .profile(CW_RF),    .delay(RF_delay), .hang(hang), .PTT(CW_PTT));
+
 //--------------------------------------------------------
 //			Generate CW sidetone with raised cosine profile
 //--------------------------------------------------------	
@@ -1128,6 +1150,7 @@ sidetone sidetone_inst( .clock(C122_clk), .tone_freq(tone_freq), .sidetone_level
 // select sidetone  when CW key active and sidetone_level is not zero else Rx audio.
 wire [31:0] Rx_audio;
 assign Rx_audio = CW_PTT && (sidetone_level != 0) ? {C122_sidetone, C122_sidetone}  : C122_LR_data; 
+
 //---------------------------------------------------------
 //		Send L/R audio to TLV320 in I2S format
 //---------------------------------------------------------
@@ -2039,6 +2062,11 @@ reg   [7:0] sidetone_level;		// 0 - 100, sets internal sidetone level
 reg   [7:0] RF_delay;				// 0 - 255, sets delay in mS from CW Key activation to RF out
 reg   [9:0] hang;						// 0 - 1000, sets delay in mS from release of CW Key to dropping of PTT
 reg  [11:0] tone_freq;				// 200 to 2250 Hz, sets sidetone frequency.
+reg         key_reverse;		   // reverse CW keyes if set
+reg   [5:0] keyer_speed; 			// CW keyer speed 0-60 WPM
+reg   [1:0] keyer_mode;				// 00 = straight/external/bug, 01 = Mode A, 10 = Mode B
+reg   [7:0] keyer_weight;			// keyer weight 33-66
+reg         keyer_spacing;			// 0 = off, 1 = on
 
 always @ (posedge IF_clk)
 begin 
@@ -2083,8 +2111,11 @@ begin
     RF_delay           <= 8'b0;	   // default CW Key activation to RF out
     hang               <= 10'b0;		// default hang time 
 	 tone_freq  		  <= 12'b0;		// default sidetone frequency
-
-
+    key_reverse		  <= 1'b0;     // reverse CW keyes if set
+    keyer_speed        <= 6'b0; 		// CW keyer speed 0-60 WPM
+    keyer_mode         <= 2'b0;	   // 00 = straight/external/bug, 01 = Mode A, 10 = Mode B
+    keyer_weight       <= 8'b0;		// keyer weight 33-66
+    keyer_spacing      <= 1'b0;	   // 0 = off, 1 = on
 
 	
   end
@@ -2128,14 +2159,19 @@ begin
 	end
 	if (IF_Rx_ctrl_0[7:1] == 7'b0001_010)
 	begin
-	  IF_Line_In_Gain   <= IF_Rx_ctrl_2[4:0];		// decode line-in gain setting
+	  IF_Line_In_Gain    <= IF_Rx_ctrl_2[4:0];		// decode line-in gain setting
 	  Angelia_atten      <= IF_Rx_ctrl_4[4:0];    // decode input attenuation setting
 	  Angelia_atten_enable <= IF_Rx_ctrl_4[5];    // decode Angelia attenuator enable/disable
 	end
  	if (IF_Rx_ctrl_0[7:1] == 7'b0001_011)
 	begin
 	  Angelia_atten2   	<= IF_Rx_ctrl_1[4:0];	// attenuation setting for input attenuator 2 (input atten for ADC2)
- atten2_enable 	   <= IF_Rx_ctrl_1[5];		// input attenuator 2 enable/disable (0=disabled, 1= enabled)
+	 atten2_enable 	   <= IF_Rx_ctrl_1[5];		// input attenuator 2 enable/disable (0=disabled, 1= enabled)
+	 key_reverse		  <= IF_Rx_ctrl_2[6];     	// reverse CW keyes if set
+    keyer_speed        <= IF_Rx_ctrl_3[5:0];  	// CW keyer speed 0-60 WPM
+    keyer_mode         <= IF_Rx_ctrl_3[7:6];	   // 00 = straight/external/bug, 01 = Mode A, 10 = Mode B
+    keyer_weight       <= IF_Rx_ctrl_4[6:0];		// keyer weight 33-66
+    keyer_spacing      <= IF_Rx_ctrl_4[7];	   // 0 = off, 1 = on
 	end
 	if (IF_Rx_ctrl_0[7:1] == 7'b0001_111)
 	begin

@@ -92,8 +92,8 @@ set_input_delay -add_delay -min -clock virt_122MHz -1.000 {ADCMISO ANT_TUNE CDOU
 # Set Output Delay
 #**************************************************************
 
-set_output_delay -add_delay -max -clock PHY_CLK125 1.000 {PHY_MDIO PHY_TX[*] PHY_TX_EN PHY_TX_CLOCK PHY_MDC ASMI_interface:ASMI_int_inst|ASMI:ASMI_inst|ASMI_altasmi_parallel_cv82:ASMI_altasmi_parallel_cv82_component|cycloneii_asmiblock2~ALTERA_SCE ASMI_interface:ASMI_int_inst|ASMI:ASMI_inst|ASMI_altasmi_parallel_cv82:ASMI_altasmi_parallel_cv82_component|cycloneii_asmiblock2~ALTERA_SDO ASMI_interface:ASMI_int_inst|ASMI:ASMI_inst|ASMI_altasmi_parallel_cv82:ASMI_altasmi_parallel_cv82_component|cycloneii_asmiblock2~ALTERA_DCLK}
-set_output_delay -add_delay -min -clock PHY_CLK125 -1.000 {PHY_MDIO PHY_TX[*] PHY_TX_EN PHY_TX_CLOCK PHY_MDC ASMI_interface:ASMI_int_inst|ASMI:ASMI_inst|ASMI_altasmi_parallel_cv82:ASMI_altasmi_parallel_cv82_component|cycloneii_asmiblock2~ALTERA_SCE ASMI_interface:ASMI_int_inst|ASMI:ASMI_inst|ASMI_altasmi_parallel_cv82:ASMI_altasmi_parallel_cv82_component|cycloneii_asmiblock2~ALTERA_SDO ASMI_interface:ASMI_int_inst|ASMI:ASMI_inst|ASMI_altasmi_parallel_cv82:ASMI_altasmi_parallel_cv82_component|cycloneii_asmiblock2~ALTERA_DCLK}
+set_output_delay -add_delay -max -clock PHY_CLK125 1.500 {PHY_MDIO PHY_TX[*] PHY_TX_EN PHY_TX_CLOCK PHY_MDC ASMI_interface:ASMI_int_inst|ASMI:ASMI_inst|ASMI_altasmi_parallel_cv82:ASMI_altasmi_parallel_cv82_component|cycloneii_asmiblock2~ALTERA_SCE ASMI_interface:ASMI_int_inst|ASMI:ASMI_inst|ASMI_altasmi_parallel_cv82:ASMI_altasmi_parallel_cv82_component|cycloneii_asmiblock2~ALTERA_SDO ASMI_interface:ASMI_int_inst|ASMI:ASMI_inst|ASMI_altasmi_parallel_cv82:ASMI_altasmi_parallel_cv82_component|cycloneii_asmiblock2~ALTERA_DCLK}
+set_output_delay -add_delay -min -clock PHY_CLK125 -0.500 {PHY_MDIO PHY_TX[*] PHY_TX_EN PHY_TX_CLOCK PHY_MDC ASMI_interface:ASMI_int_inst|ASMI:ASMI_inst|ASMI_altasmi_parallel_cv82:ASMI_altasmi_parallel_cv82_component|cycloneii_asmiblock2~ALTERA_SCE ASMI_interface:ASMI_int_inst|ASMI:ASMI_inst|ASMI_altasmi_parallel_cv82:ASMI_altasmi_parallel_cv82_component|cycloneii_asmiblock2~ALTERA_SDO ASMI_interface:ASMI_int_inst|ASMI:ASMI_inst|ASMI_altasmi_parallel_cv82:ASMI_altasmi_parallel_cv82_component|cycloneii_asmiblock2~ALTERA_DCLK}
  
 set_output_delay -add_delay -max -clock _122MHz 1.000 [get_ports {ADCCLK ADCMOSI ATTN_CLK ATTN_CLK_2 ATTN_DATA ATTN_DATA_2  ATTN_LE ATTN_LE_2  CBCLK CDIN CLRCIN CLRCOUT CMCLK CS DACD[*] DEBUG_LED* DITH DITH_2 FPGA_PLL FPGA_PTT J15_5 J15_6 MICBIAS_ENABLE MICBIAS_SELECT MIC_SIG_SELECT MOSI NCONFIG PTT_SELECT RAND RAND_2 SCK SI SPI_SCK SPI_SDO SSCK Status_LED USEROUT* nADCCS nCS DAC_ALC}]
 set_output_delay -add_delay -min -clock _122MHz -1.000 [get_ports {ADCCLK ADCMOSI ATTN_CLK ATTN_CLK_2 ATTN_DATA ATTN_DATA_2 ATTN_LE ATTN_LE_2 CBCLK CDIN CLRCIN CLRCOUT CMCLK CS DACD[*] DEBUG_LED* DITH DITH_2 FPGA_PLL FPGA_PTT J15_5 J15_6 MICBIAS_ENABLE MICBIAS_SELECT MIC_SIG_SELECT MOSI NCONFIG PTT_SELECT RAND RAND_2 SCK SI SPI_SCK SPI_SDO SSCK Status_LED USEROUT* nADCCS nCS DAC_ALC}]
@@ -138,13 +138,16 @@ set_max_delay -from PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2] 
 set_max_delay -from PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] -to Attenuator:Attenuator_ADC1|clk_2 10
 set_max_delay -from PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] -to Attenuator:Attenuator_ADC2|clk_2 3
 set_max_delay -from PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] -to PLL_IF_inst|altpll_component|auto_generated|pll1|clk[1] 7
-set_max_delay -from PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] -to PLL_IF_inst|altpll_component|auto_generated|pll1|clk[2] 11
+# was 11
+set_max_delay -from PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] -to PLL_IF_inst|altpll_component|auto_generated|pll1|clk[2] 112
 set_max_delay -from PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] -to _122MHz 17
 set_max_delay -from PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] -to LTC2208_122MHz_2 5
 set_max_delay -from PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] -to pro_count[2] 11
 set_max_delay -from PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] -to PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[2] 10
 
 set_max_delay -from PLL_IF_inst|altpll_component|auto_generated|pll1|clk[2] -to _122MHz 12
+# new
+set_max_delay -from PLL_IF_inst|altpll_component|auto_generated|pll1|clk[2] -to pro_count[2] 7
 
 set_max_delay -from pro_count[2] -to PLL_IF_inst|altpll_component|auto_generated|pll1|clk[2] 16
 set_max_delay -from pro_count[2] -to PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] 14
@@ -159,9 +162,10 @@ set_max_delay -from spc[2] -to _122MHz 31
 set_max_delay -from virt_122MHz -to pro_count[2] 15
 set_max_delay -from virt_122MHz -to PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] 15
 set_max_delay -from virt_122MHz -to PLL_clocks_inst|altpll_component|auto_generated|pll1|clk[0] 4
+# new
+set_max_delay -from virt_122MHz -to PLL_IF_inst|altpll_component|auto_generated|pll1|clk[2] 12
 
 set_max_delay -from virt_PHY_RX_CLOCK -to PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] 11
-
 
 
 #************************************************************************************
