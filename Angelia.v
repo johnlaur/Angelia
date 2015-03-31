@@ -201,11 +201,15 @@
 	 1 Jul 2014		- Fixed Tx spur bug by increasing the delay above to 50 nSec instead, in the Angelia.sdc file as follows:
 								set_max_delay -from PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] -to LTC2208_122MHz 50
 						- Changed version number to v3.9
-	 24 Jul 2014   - Increased timing margins on numerous paths to make the design more robust with
-							respect to running on different ANAN-100D radios
+	 24 Jul 2014   - Increased timing margins on numerous paths to make the design more robust with respect to running on different 
+							ANAN-100D radios
 						- Changed version number to v4.0
+	 28 Jul 2014	- Fixed broken logic linkage between ACC-PORT external PPT input and PPT OUT which also fixed
+						    non-break-in-CW-mode PTT operation
+						- Fixed Tx spurs and sporadic CW stoppage by changing internal timing
+						- Fixed no REV power reading on Tx
+						- Changed version number to v4.1
 						
-	
 *** change global clock name **** 
   
 
@@ -415,7 +419,7 @@ assign  IO1 = 1'b0;  						// low to enable, high to mute
 parameter M_TPD   = 4;
 parameter IF_TPD  = 2;
 
-parameter  Angelia_version = 8'd40;		// Serial number of this version
+parameter  Angelia_version = 8'd41;		// Serial number of this version
 localparam Penny_serialno = 8'd00;		// Use same value as equ1valent Penny code 
 localparam Merc_serialno = 8'd00;		// Use same value as equivalent Mercury code
 
@@ -2308,7 +2312,7 @@ begin
  end
 end
 
-assign FPGA_PTT = (IF_Rx_ctrl_0[0] | CW_PTT); // IF_Rx_ctrl_0 only updated when we get correct sync sequence. CW_PTT is used when internal CW is selected
+assign FPGA_PTT = (IF_Rx_ctrl_0[0] | CW_PTT | ~PTT); // IF_Rx_ctrl_0 only updated when we get correct sync sequence. CW_PTT is used when internal CW is selected
 
 
 //------------------------------------------------------------
