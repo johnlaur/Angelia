@@ -119,6 +119,12 @@
 						  to those used in Hermes_v2.4 to accommodate "stitched" mode rx at up to 384 ksps sampling rates,
 						- changed version number to 1.7
 						
+	10 May			- changed "address !== 24'h2C0000" to "address < 24'h2C0000" on line 101 and included a check in line 
+						  156 in ASMI_interface.v to fix a sporadic bug when updating firmware that sometimes caused the entire 
+						  EEPROM to be erased and to ensure the EEPROM is not writing into undesired locations when using 
+						  HPSDRProgrammer to update firmware.  
+						- changed version number to 1.8
+						
 						*** change global clock name **** 
   
 
@@ -182,7 +188,7 @@ module Angelia(INA, INA_2,
 parameter M_TPD   = 4;
 parameter IF_TPD  = 2;
 
-parameter  Angelia_version = 8'd17;		// Serial number of this version
+parameter  Angelia_version = 8'd18;		// Serial number of this version
 localparam Penny_serialno = 8'd00;		// Use same value as equ1valent Penny code 
 localparam Merc_serialno = 8'd00;		// Use same value as equivalent Mercury code
 

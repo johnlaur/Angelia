@@ -98,7 +98,7 @@ case (state)
 		write_enable <= 0;
 		sector_erase <= 0;
 		if (busy) state <= 2;
-		else if (address != 24'h2C0000) begin 
+		else if (address < 24'h2C0000) begin 
 				address <= address + 24'h040000;
 				state <= 1;
 		end 
@@ -152,8 +152,9 @@ case (state)
 			 state <= state + 1'b1;
 		end 
 		else if (!busy && IF_Rx_used > 254  && send_more == 0) begin
-			address <= address + 24'd256;		// increment write address to point to next page boundry
-			state <= 5;
+			address <= address + 24'd256;		// increment write address to point to next page boundary
+			if (address > 24'h2C0000 | address == 24'h000000) page <= num_blocks;
+			else state <= 5;
 		end
 	end 
 
