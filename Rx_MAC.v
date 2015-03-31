@@ -143,6 +143,10 @@
 
 	2011 Mar  28 - Enable Discovery request at all times but use IP and Port of PC that sends Start command.
 	     Apr   3 - Add wide band spectrum and on/off enable
+   2012 Dec  17 - Added FIFO to convert nibbles to bytes from the PHY.
+	          19 - enable ARP to this MAC as well as broadcast
+				 21 - Add read and write of IP address to EEPROM using raw Ethernet frames (i.e. bootstrap mode)
+             29 - Added FIFO and new nibble to Byte conversion code in PHY interface.
 
 					  
 */
@@ -153,7 +157,8 @@ module Rx_MAC (PHY_RX_CLOCK, PHY_data_clock, RX_DV, PHY_RX, broadcast, ARP_reque
 			   ARP_PC_MAC, ARP_PC_IP, This_IP, Ping_PC_IP, Ping_PC_MAC,
 			   YIADDR, This_MAC, METIS_discovery, METIS_discover_sent, PC_IP, PC_MAC, Port, Length, data_match,
 			   PHY_100T_state, Rx_fifo_data, seq_error, run, wide_spectrum, IP_lease, DHCP_IP, DHCP_MAC,
-			   erase, erase_ACK, num_blocks, EPCS_FIFO_enable);
+			   erase, erase_ACK, num_blocks, EPCS_FIFO_enable, IP_write_done, write_IP, IP_to_write,
+				read_IP, IP_ready, send_IP, send_IP_ACK, IP_PC_MAC);
 			   
 input PHY_RX_CLOCK;
 input PHY_data_clock;
@@ -162,9 +167,12 @@ input [3:0]PHY_RX;
 input [47:0]This_MAC;  				// MAC address of this Oyz board
 input [31:0]This_IP;					// IP address allocated to this METIS Board
 input METIS_discover_sent;			// set when Discovery request has been responded to
-output [15:0]Port;					// UPD/IP Port that Metis and the PC is using
 input erase_ACK;						// set when ASMI inerface confirms erase request received 
+input IP_write_done;					// set when IP write is done
+input IP_ready;						// set when IP address is available from the EEPROM
+input reg send_IP_ACK;				// set when the IP address has been sent to the PC
 
+output [15:0]Port;					// UPD/IP Port that Metis and the PC is using
 output reg  broadcast;   			// set when we receive a broadcast address
 output reg  ARP_request;			// set when we receive a vaild ARP request
 output reg  ping_request;			// set when we receive a valid ping request
@@ -181,7 +189,8 @@ output reg  [47:0]PC_MAC;			// holds the MAC address of the PC we are connecting
 output reg  [47:0]ARP_PC_MAC;		// has the MAC address of the PC requesting an ARP	
 output reg  [31:0]ARP_PC_IP;		// has the IP address of the PC requesting an ARP
 output reg  [31:0]Ping_PC_IP;		// has the IP address of the PC requesting a ping
-output reg  [47:0]Ping_PC_MAC;		// has the MAC address of the PC requesting a ping
+output reg  [47:0]Ping_PC_MAC;	// has the MAC address of the PC requesting a ping
+output reg  [47:0]IP_PC_MAC;		// had the IP address of the PC requesting/setting the IP address
 output reg  [15:0]Length;			// holds length of packet, used by ping calculate payload length
 output reg  data_match;				// **** test flag *****
 output reg  PHY_100T_state;		// used at a system clock at 100T
@@ -195,6 +204,10 @@ output reg [47:0]DHCP_MAC;			// MAC address of DHCP Server making offer
 output reg erase;						// set when we receive an EPCS16 erase command from PC 
 output reg [31:0]num_blocks;		// holds number of blocks of 256 bytes that we will save in the EPCS16
 output reg EPCS_FIFO_enable;		// set when we write to the EPCS fifo
+output reg write_IP;					// set when IP write requested 
+output reg [31:0]IP_to_write;		// holds IP address sent by PC to save in EEPROM
+output reg read_IP;					// set when we want to read the IP address from the EEPROM
+output reg send_IP;					// set when we want to send the IP address to the PC
 
 reg [111:0] PHY_output;				// shift register to hold nibble output from Micrel PHY chip 
 reg [4:0] PHY_Rx_state;
@@ -213,8 +226,7 @@ reg [15:0] FromPort;					// Port that PC sends from
 reg [15:0] ToPort;					// Port that PC send to 
 reg [31:0]temp_PC_IP;				// save PC IP address incase Discovery is from a different PC
 reg [47:0]temp_PC_MAC;				// save PC MAC address incase Discovery is from a different PC
-reg [15:0]temp_Port;					// save PC Port incase Discovery is from a different PC		
-
+reg [15:0]temp_Port;					// save PC Port incase Discovery is from a different PC
 
 localparam  Rx_port = 1024;		// Port that Metis listens on 
 
@@ -229,23 +241,53 @@ localparam	START = 5'd0,
 			PING = 5'd7,
 			PROGRAM_FIFO = 5'd8,
 			ERASE = 5'd9,
-			RETURN = 5'd10;
+			READIP = 5'd10,
+			WRITEIP = 5'd11,
+			RETURN = 5'd12;
 
 localparam Broadcast = 48'hFF_FF_FF_FF_FF_FF;
+localparam IP_MAC    = 48'h11_22_33_44_55_66;  // fixed MAC address when programming IP address
 
 
-// reg [111:0] PHY_output;			// register to hold output from Micrel PHY chip 
-// reg Rx_enable;
 wire [3:0] PHY_RX;					// has nibble from PHY chip
 wire [3:0] PHY_data_h;
 wire [3:0] PHY_data_l;
 reg  [7:0] PHY_byte;
-reg PHY_Rx_fifo_reset;
-reg [31:0]prev_seq_number;
-reg seq_error;							// set when we have a sequence error
+wire [7:0] PHY_byte_out;
+reg  PHY_Rx_fifo_reset;
+reg  [31:0]prev_seq_number;
+reg  seq_error;							// set when we have a sequence error
 
 
 // ------------------------- 100T Interface ---------------------
+// FIFO based PHY interface. The state machine ensures that the low and high nibbles
+// are always presented to the input FIFO in the correct order.
+// The output from the FIFO is clocked with the PHY_RX_CLOCK/2 so we always have a clock
+// feeding the decoder.  This is required since reading/writing the IP address to EEPROM takes time. 
+
+//-------------------------------------------
+//   			PHY fifo
+//-------------------------------------------
+
+/*
+							 PHY_fifo (32 bytes) 
+						
+						---------------------
+			PHY_byte |data[7:0]	         | 
+						|				         |
+!PHY_100T_state	|wrreq		         | 
+						|					      |									    
+	~PHY_RX_CLOCK	|>wrclk	 			   |
+						---------------------								
+		 !rdempty   |rdreq		  q[7:0] | PHY_byte_out
+						|					      |					  			
+						|   		     rdempty| rdempty 
+						|                    | 							
+	PHY_data_clock	|>rdclk  			   | 	    
+						---------------------								
+
+ 
+*/
 
 always @ (negedge PHY_RX_CLOCK)
 begin
@@ -265,9 +307,16 @@ case (PHY_100T_state)
 endcase
 end 
 
-// shift the byte from the PHY into a 112 bit register when PHY_state = 0
-always @ (posedge PHY_RX_CLOCK) 
-	if (PHY_100T_state == 0) PHY_output <= {PHY_output[103:0], PHY_byte};
+
+wire rdempty;
+
+PHY_fifo PHY_fifo_inst (.data(PHY_byte), .q(PHY_byte_out), .wrreq(!PHY_100T_state), .wrclk(~PHY_RX_CLOCK), .rdreq(!rdempty),
+						.rdclk(PHY_data_clock), .rdempty(rdempty));
+
+// apply output of fifo to 112 bit shift register
+always @ (posedge PHY_data_clock)
+ if(!rdempty)
+	 PHY_output <= {PHY_output[103:0], PHY_byte_out}; 	  
 
 // ---------------------------- 1000T interface -------------------------
 
@@ -279,7 +328,7 @@ assign Rx_fifo_data = PHY_output[7:0];
 // ---------------------------- Process PHY data ------------------------
 
 // process bytes from PHY
-always @ (negedge PHY_data_clock)		
+always @ (negedge PHY_data_clock)						
 begin
 
 case (PHY_Rx_state)
@@ -295,7 +344,8 @@ START:
 	EPCS_data_count <= 0;
 	ping_count <= 0;
 	erase <= 0;						// reset erase command
-	//ping_delay <= 0;
+	
+	
 		if (PHY_output[63:0] == {16'h55_D5, Broadcast} ) begin
 			broadcast <= 1'b1;				// set broadcast flag 
 			PHY_Rx_state <= GET_TYPE;   	// See what type of packet and who it is for
@@ -306,27 +356,54 @@ START:
 			this_MAC <= 1'b1;					  			// set this MAC flag
 			PHY_Rx_state <= GET_TYPE;  			  	// have preamble and address so next state 
 		end
+	  
+	  // else check for request to program or read IP address
+		else if (PHY_output[63:0] == {16'h55_D5, IP_MAC}) begin	// addressed to me?	
+			this_MAC <= 1'b1;					  			// set this MAC flag
+			PHY_Rx_state <= GET_TYPE;  			  	// have preamble and address so next state
+		end
+		
 		else PHY_Rx_state <= START;  			  		// no preamble and MAC address  so loop and look again  
 	end
+	
+	
 	
 // Determine the type of packet 
 // we get one left shift automatically when we go to this state
 GET_TYPE:
 begin
-data_match <= 1'b1;										//  we either got our MAC or Broadcast to get this far :) 
+//data_match <= 1'b1;										//  we either got our MAC or Broadcast to get this far :) 
 	case(left_shift)
-	// Check for ARP request
-	13:	begin
-		FromMAC <= PHY_output[111:64]; 					// get the MAC address of the sending PC
-		Length <= PHY_output[31:16];						// get lenght of packet for ping 	
-			if (PHY_output[63:48] == 16'h0806 && broadcast) begin 		
-				left_shift <= 0;
-				PHY_Rx_state <= ARP;
+	// Check for IP or ARP request
+	13: begin
+		  if (PHY_output[63:40] == 24'hEF_FE_03) begin // check this is an IP read/write request
+				data_match <= 1'b1;	
+				IP_PC_MAC <= PHY_output[111:64]; 			// get the MAC address of the PC reading/writing the IP address
+				case(PHY_output[39:32])							// determine what command has been sent
+				4:	begin
+					read_IP <= 1'b1;
+					PHY_Rx_state <= READIP;
+					end
+				5:	begin											  // Write static IP address to EEPROM
+					IP_to_write <= PHY_output[31:0];
+					write_IP <= 1'b1;
+					PHY_Rx_state <= WRITEIP;
+					end
+				endcase
 			end
-			else begin
-				UDP_check <= PHY_output[63:48];				// save these values for next check
-				left_shift <= left_shift + 1'b1;
-			end 
+			
+			else begin	
+				FromMAC <= PHY_output[111:64]; 					// get the MAC address of the sending PC
+				Length <= PHY_output[31:16];						// get lenght of packet for ping 	
+					if (PHY_output[63:48] == 16'h0806) begin 	// check for ARP request	
+						left_shift <= 0;
+						PHY_Rx_state <= ARP;
+					end
+					else begin
+						UDP_check <= PHY_output[63:48];				// save these values for next check
+						left_shift <= left_shift + 1'b1;
+					end 
+			end
 		end
 	// Check for UDP/IP
 	27: begin		
@@ -646,6 +723,31 @@ PROGRAM_FIFO:
 
 // wait until ASMI has seen the erase command; erase flag is cleared at START
 ERASE:	if (erase_ACK) PHY_Rx_state <= RETURN;
+
+
+// Wait until IP read from EEPROM is complete then send to PC	
+READIP:
+	begin
+		if (IP_ready) begin
+			read_IP <= 0;						// reset read IP flag
+			send_IP <= 1'b1; 					// set send IP address to PC flag
+		end
+		else if (send_IP_ACK) begin		// loop here until the IP address had been sent
+			send_IP <= 0; 
+			PHY_Rx_state <= RETURN;			
+		end
+	end
+	
+// wait until IP write is done then return
+WRITEIP:	
+	begin
+		if (IP_write_done) begin
+			write_IP <= 0;
+			PHY_Rx_state <= RETURN;	
+		end
+	end 
+
+
 	
 // Clear any test flags and return to the start
 RETURN:

@@ -49,7 +49,7 @@ For line input
 
 */
 
-module TLV320_SPI (clk, CMODE, nCS, MOSI, SSCK, boost, line);
+module TLV320_SPI (clk, CMODE, nCS, MOSI, SSCK, boost, line, line_in_gain);
 
 input wire clk;
 output wire CMODE;
@@ -57,7 +57,8 @@ output reg  nCS;
 output reg  MOSI;
 output reg  SSCK;
 input  wire boost;
-input  wire line;   // set when using line rather than mic input 
+input  wire line;   // set when using line rather than mic input
+input wire [4:0] line_in_gain;
 
 reg   [3:0] load;
 reg   [3:0] TLV;
@@ -65,6 +66,7 @@ reg  [15:0] TLV_data;
 reg   [3:0] bit_cnt;
 reg         prev_boost;
 reg         prev_line;
+reg	[4:0] prev_line_in_gain;
 
 // Set up TLV320 data to send 
 always @*	
@@ -77,8 +79,8 @@ begin
   4'd4: TLV_data = 16'h0E02;
   4'd5: TLV_data = 16'h1000;
   4'd6: TLV_data = 16'h0A00;
-  4'd7: TLV_data = 16'h0000;				// set line in gain to min
-  4'd8: TLV_data = 16'h0000;
+  4'd7: TLV_data = {11'b0, line_in_gain};				// set line in gain
+  //4'd8: TLV_data = 16'h0000;
   default: TLV_data = 0;
   endcase
 end
@@ -136,14 +138,15 @@ begin
     begin 
     prev_boost <= boost; 	   			// save the current boost setting 
     prev_line <= line;		   			// save the current line in setting
+	 prev_line_in_gain <= line_in_gain; // save the current line-in gain setting
     end 
   end
 
   4'd5:
   begin
-    if (load == 8) begin					// stop when all data sent, and wait for boost to change
+    if (load == 7) begin					// stop when all data sent, and wait for boost to change
 		nCS <= 1'b1;        					// set CS high               
-		  if (boost != prev_boost || line != prev_line) begin  // has boost or line in changed?
+		  if (boost != prev_boost || line != prev_line || line_in_gain != prev_line_in_gain) begin  // has boost or line in or line-in gain changed?
 			load <= 0;
 			TLV <= 4'd0;
 		  end

@@ -21,7 +21,7 @@
 //  SP_fifo receive control  - Copyright 2009, 2010, 2011, 2012  Phil Harman VK6APH
 
 /*
-	The SP_fifo is filled with 4096 consecutive samples from the ADC. The code loops
+	The SP_fifo is filled with 16k consecutive samples from the ADC. The code loops
 	until the fifo is empty then fills again.	
 */
 
@@ -47,7 +47,7 @@ begin
     wrenable <= 1'b0;
   end 
  
-// load SP_fifo with 4096 raw 16 bit ADC samples every time it is empty    
+// load SP_fifo with 16k raw 16 bit ADC samples every time it is empty    
 case(state)
 0: begin 
 	if (sp_fifo_wrempty) begin  		// enable write to SP_fifo

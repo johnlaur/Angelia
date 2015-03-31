@@ -98,8 +98,16 @@
 						- Released as v1.0
 	14 December		- modified the receiver module to yield 6 dB greater overall gain, to match Hermes/Mercury rx module gain
 						- Released as v1.1
-	
-	*** change global clock name **** 
+	29 December		- increased wideband spectrum FIFO size to 16K from 4K
+						- added Alex T/R relay disable option (C&C bit C3[7] when C0=0001_001x)
+						- Released as v1.2
+	30 December    - added ability to read/write Angelia IP address from HPSDRProgrammer without J17 in place
+						- added hardware ID = 4 to specify Angelia is present in PHY comm to PC
+						- released as v1.3. Compiled with Quartus V12.1
+	8 January 2013 - fixed ethernet ARP response bug
+						- released as v1.4
+						
+						*** change global clock name **** 
   
 
 NOTES: 
@@ -157,18 +165,18 @@ module Angelia(INA, INA_2,
 				RAM_A8,RAM_A9,RAM_A10,RAM_A11,RAM_A12,RAM_A13,				
 				PHY_TX,PHY_RX,RX_DV,PHY_TX_CLOCK,PHY_TX_EN, J15_5, J15_6, 
 				PHY_RX_CLOCK,PHY_CLK125,PHY_MDIO,PHY_MDC,PHY_INT_N,PHY_RESET_N,CLK_25MHZ,
-				MODE2,SCK, SI, SO, CS, NCONFIG,	ANT_TUNE, );
+				MODE2,SCK, SI, SO, CS, NCONFIG,	ANT_TUNE );
 				
 parameter M_TPD   = 4;
 parameter IF_TPD  = 2;
 
-parameter  Angelia_version = 8'd11;		// Serial number of this version
+parameter  Angelia_version = 8'd14;		// Serial number of this version
 localparam Penny_serialno = 8'd00;		// Use same value as equ1valent Penny code 
 localparam Merc_serialno = 8'd00;		// Use same value as equivalent Mercury code
 
 localparam RX_FIFO_SZ  = 4096; 			// 16 by 4096 deep RX FIFO
 localparam TX_FIFO_SZ  = 1024; 			// 16 by 1024 deep TX FIFO  
-localparam SP_FIFO_SZ  = 4096; 			// 16 by 4096 deep SP FIFO
+localparam SP_FIFO_SZ  = 16384; 			// 16 by 16384 deep SP FIFO
 
 localparam read_reg_address = 5'd31; 	// PHY register to read from - gives connect speed and fully duplex		
 
@@ -380,10 +388,14 @@ assign PHY_TX_CLOCK = ~Tx_clock;
 assign PHY_speed = 1'b0;		// high for 1000T, low for 100T; force 100T for now
 
 // select data clock speed based on JP2 and speed that network is running at
-// assign PHY_data_clock = (PHY_speed & speed_1000T) ? PHY_RX_CLOCK : ~PHY_100T_state;
+// assign PHY_data_clock = (PHY_speed & speed_1000T) ? PHY_RX_CLOCK : PHY_RX_CLOCK_2;
+
+// generate PHY_RX_CLOCK/2 for 100T 
+reg PHY_RX_CLOCK_2;
+always @ (posedge PHY_RX_CLOCK) PHY_RX_CLOCK_2 <= ~PHY_RX_CLOCK_2; 
 
 // force 100T for now 
-assign PHY_data_clock = ~PHY_100T_state;
+assign PHY_data_clock = PHY_RX_CLOCK_2;
 
 //------------------------------------------------------------
 //  Reset and initialisation
@@ -452,7 +464,7 @@ begin
 1:  begin
 		if (MAC_ready) begin 					// MAC_ready goes high when EEPROM read
 			read_MAC <= 0;
-			read_IP <= 1'b1;						// set read IP flag
+			read_IP_address <= 1'b1;						// set read IP flag
 			start_up <= start_up + 1'b1;
 		end
 		else start_up <= 1'b1;
@@ -460,7 +472,7 @@ begin
 	// read the IP address from EEPROM then set up the PHY
 2:	begin
 		if (IP_ready) begin
-			read_IP <= 0;
+			read_IP_address <= 0;
     		write_PHY <= 1'b1;					// set write to PHY flag
 			start_up <= start_up + 1'b1;
 		end
@@ -552,13 +564,11 @@ end
 //----------------------------------------------------------------------------------
 // read and write to the EEPROM	(NOTE: Max clock frequency is 20MHz)
 //----------------------------------------------------------------------------------
-wire read_IP;
-wire IP_ready;
-				
-EEPROM EEPROM_inst(.clock(EEPROM_clock), .read_MAC(read_MAC), .read_IP(read_IP), .write_IP(), 
-				   .IP_to_write(), .CS(CS), .SCK(SCK), .SI(SI), .SO(SO), .This_MAC(This_MAC),
-				   .This_IP(AssignIP), .MAC_ready(MAC_ready), .IP_ready(IP_ready), .IP_write_done());
-				   				 
+EEPROM EEPROM_inst(.clock(EEPROM_clock), .read_MAC(read_MAC), .read_IP(read_IP || read_IP_address), .write_IP(write_IP), 
+				   .IP_to_write(IP_to_write), .CS(CS), .SCK(SCK), .SI(SI), .SO(SO), .This_MAC(This_MAC),
+				   .This_IP(AssignIP), .MAC_ready(MAC_ready), .IP_ready(IP_ready), .IP_write_done(IP_write_done));				
+					
+					
 								
 //------------------------------------------------------------------------------------
 //  If DHCP provides an IP address for Metis use that else use a random APIPA address
@@ -704,7 +714,7 @@ DHCP DHCP_inst(Tx_clock_2, (DHCP_start || DHCP_discover_broadcast), DHCP_renew, 
 // 		Set up TLV320 using SPI 
 //---------------------------------------------------------
 
-TLV320_SPI TLV (.clk(CMCLK), .CMODE(CMODE), .nCS(nCS), .MOSI(MOSI), .SSCK(SSCK), .boost(IF_Mic_boost), .line(IF_Line_In));
+TLV320_SPI TLV (.clk(CMCLK), .CMODE(CMODE), .nCS(nCS), .MOSI(MOSI), .SSCK(SSCK), .boost(IF_Mic_boost), .line(IF_Line_In), .line_in_gain(IF_Line_In_Gain));
 
 //-----------------------------------------------------
 //   Rx_MAC - PHY Receive Interface  
@@ -732,6 +742,7 @@ wire [47:0]ARP_PC_MAC; 			// MAC address of PC requesting ARP
 wire [31:0]ARP_PC_IP;			// IP address of PC requesting ARP
 wire [47:0]Ping_PC_MAC; 		// MAC address of PC requesting ping
 wire [31:0]Ping_PC_IP;			// IP address of PC requesting ping
+wire [47:0]IP_PC_MAC;         // IP address of PC requesting/setting IP address
 wire [15:0]Length;				// Lenght of frame - used by ping
 wire data_match;					// for debug use 
 wire PHY_100T_state;				// used as system clock at 100T
@@ -746,6 +757,14 @@ wire erase;							// set when we receive an erase EPCS16 command
 wire erase_ACK;					// set when ASMI interface acks the erase command
 wire [31:0]num_blocks;			// number of 256 byte blocks to save in EPCS16
 wire EPCS_FIFO_enable;			// EPCS fifo write enable
+wire IP_write_done;				// set when IP address has been written to the EEPORM
+wire write_IP;						// set when request to write IP address received
+wire [31:0]IP_to_write;		   // IP address to write to EEPROM
+wire read_IP_address;		   // set when we want to read the IP address from the EEPROM
+wire IP_ready;						// set when IP address is available from the EEPROM
+wire send_IP;						// set when we want to send the IP address to the PC
+wire send_IP_ACK;					// set when the IP address has been sent to the PC
+wire read_IP;						// set when PC requests the IP address from EEPROM
 
 
 Rx_MAC Rx_MAC_inst (.PHY_RX_CLOCK(PHY_RX_CLOCK), .PHY_data_clock(PHY_data_clock),.RX_DV(RX_DV), .PHY_RX(PHY_RX),
@@ -759,7 +778,8 @@ Rx_MAC Rx_MAC_inst (.PHY_RX_CLOCK(PHY_RX_CLOCK), .PHY_data_clock(PHY_data_clock)
 			        .Ping_PC_IP(Ping_PC_IP), .Port(Port), .seq_error(seq_error), .data_match(data_match),
 			        .run(run), .IP_lease(IP_lease), .DHCP_IP(DHCP_IP), .DHCP_MAC(DHCP_MAC),
 			        .erase(erase), .erase_ACK(erase_ACK), .num_blocks(num_blocks), .EPCS_FIFO_enable(EPCS_FIFO_enable),
-			        .wide_spectrum(wide_spectrum)
+			        .wide_spectrum(wide_spectrum), .IP_write_done(IP_write_done), .write_IP(write_IP), .IP_to_write(IP_to_write),
+					  .read_IP(read_IP), .IP_ready(IP_ready), .send_IP(send_IP), .send_IP_ACK(send_IP_ACK), .IP_PC_MAC(IP_PC_MAC)
 			        );
 			        
 
@@ -798,27 +818,58 @@ Tx_MAC Tx_MAC_inst (.Tx_clock(Tx_clock), .Tx_clock_2(Tx_clock_2), .IF_rst(IF_rst
 			        .erase_done(erase_done), .erase_done_ACK(erase_done_ACK), .send_more(send_more),
 			        .send_more_ACK(send_more_ACK), .Angelia_version(Angelia_version),
 			        .sp_fifo_rddata(sp_fifo_rddata), .sp_fifo_rdreq(sp_fifo_rdreq), 
-			        .sp_fifo_rdused(), .wide_spectrum(wide_spectrum), .have_sp_data(sp_data_ready)
+			        .sp_fifo_rdused(), .wide_spectrum(wide_spectrum), .have_sp_data(sp_data_ready),
+					  .send_IP(send_IP), .send_IP_ACK(send_IP_ACK), .AssignIP(AssignIP), .IP_PC_MAC(IP_PC_MAC)
 			        ); 
 
 //------------------------ sequence ARP and Ping requests -----------------------------------
 
-// send ARP reply, set Send_ARP on the request and clear when done ** may not be requried if ARP_request is not too fast.
-reg Send_ARP;
+// send ARP reply, set Send_ARP on the request and clear when done
+
+wire Send_ARP;
+wire ping_reply;
 reg ping_sent;
-reg ping_reply;
+reg [6:0]times_up;			// time out counter so code wont hang here
+reg [1:0] state;
+reg [1:0] next_state;
+
+parameter IDLE = 2'd0,
+			  ARP = 2'd1,
+			 PING = 2'd2;
 
 always @ (posedge PHY_RX_CLOCK)
+	state <= next_state;
+
+always @ (state)
 begin
-	if (ARP_request)
-		Send_ARP <= 1'b1;
-	if (ARP_sent)
-		Send_ARP <= 0;
-	if (ping_request)
-		ping_reply <= 1'b1;
-	if (ping_sent)
-		ping_reply <= 0;	
+	case (state)
+
+	IDLE: begin
+			times_up = 0;					// reset time out counter
+				if (ARP_request) 			next_state = ARP;
+				else if (ping_request) 	next_state = PING;
+				else 							next_state = IDLE;
+			end
+
+	ARP:	begin
+				if (ARP_sent || times_up == 100) next_state = IDLE;
+				else 										next_state = ARP;
+			times_up = times_up + 7'd1;
+			end
+
+	PING:	begin
+				if (ping_sent || times_up == 100) next_state = IDLE;
+				else 										next_state = PING;
+			times_up = times_up + 7'd1;
+			end
+
+	default: next_state = IDLE;
+	endcase
 end
+
+// output assignments
+assign {ping_reply,Send_ARP} = state[1:0];
+
 
 //----------------------------------------------------
 //   Receive PHY FIFO 
@@ -863,11 +914,11 @@ PHY_Rx_fifo PHY_Rx_fifo_inst(.wrclk (PHY_data_clock),.rdreq (IF_PHY_drdy),.rdclk
 					 
 					 
 //------------------------------------------------
-//   SP_fifo  (4096 words) dual clock FIFO
+//   SP_fifo  (16384 words) dual clock FIFO
 //------------------------------------------------
 
 /*
-        The spectrum data FIFO is 16 by 4096 words long on the input.
+        The spectrum data FIFO is 16 by 16384 words long on the input.
         Output is in Bytes for easy interface to the PHY code
         NB: The output flags are only valid after a read/write clock has taken place
 
@@ -904,7 +955,7 @@ wire sp_fifo_wrreq;
 //   Wideband Spectrum Data 
 //--------------------------------------------------
 
-//	When wide_spectrum is set and sp_fifo_wrempty then fill fifo with 4k words 
+//	When wide_spectrum is set and sp_fifo_wrempty then fill fifo with 16k words 
 // of consecutive ADC samples.  Pass have_sp_data to Tx_MAC to indicate that 
 // data is available.
 // Reset fifo when !run so the data always starts at a known state.
@@ -935,7 +986,7 @@ assign sp_data_ready = (sp_delay == 0 && have_sp_data);
 
 	
 //--------------------------------------------------------------------------
-//			EPCS64/128 Erase and Program code 
+//			EPCS128 Erase and Program code 
 //--------------------------------------------------------------------------
 
 /*
@@ -1842,6 +1893,10 @@ assign  IF_PHY_drdy = have_room & ~IF_PHY_rdempty;
 
 	1 = Rx_1_out on 
 	
+	When IF_Rx_ctrl_0[7:1] == 7'b0001_010 decodes as follows:
+	
+	IF_Line_In_Gain		<= IF_Rx_ctrl2[4:0]	// decode 5-bit line gain setting
+	
 */
 
 reg   [6:0] IF_OC;       			// open collectors on Angelia
@@ -1870,6 +1925,7 @@ reg   [6:0] Alex_manual_LPF;		// Alex LPF relay selection in manual mode
 reg   [5:0] Alex_manual_HPF;		// Alex HPF relay selection in manual mode
 reg   [4:0] Angelia_atten;			// 0-31 dB Heremes attenuator value
 reg			Angelia_atten_enable; // enable/disable bit for Angelia attenuators
+reg			TR_relay_disable;		// Alex TR relay disable (0 = TR relay enabled, 1 = TR relay disabled)
 
 
 always @ (posedge IF_clk)
@@ -1888,6 +1944,7 @@ begin
     IF_RAND            <= 1'b0;    	// decode randomizer on or off
     IF_RX_relay        <= 2'b0;    	// decode Alex Rx relays
     IF_Rout            <= 1'b0;    	// decode Alex Rx_1_out relay
+	 TR_relay_disable	  <= 1'b0;		// decode Alex TR relay disable
     // RX_CONTROL_4
     IF_TX_relay        <= 2'b0;    	// decode Alex Tx Relays
     IF_duplex          <= 1'b0;    	// not in duplex mode
@@ -1945,6 +2002,7 @@ begin
 	  VNA					  <= IF_Rx_ctrl_2[7];		// 1 = enable VNA mode
 	  Alex_manual_HPF	  <= IF_Rx_ctrl_3[5:0];		// Alex HPF filters select
 	  Alex_6m_preamp	  <= IF_Rx_ctrl_3[6];		// 6M low noise amplifier (0 = disable, 1 = enable)
+	  TR_relay_disable  <= IF_Rx_ctrl_3[7];		// Alex TR relay disable (0=TR relay enabled, 1=TR relay disabled)
 	  Alex_manual_LPF	  <= IF_Rx_ctrl_4[6:0];		// Alex LPF filters select	  
 	end 
 	if (IF_Rx_ctrl_0[7:1] == 7'b0001_010)
@@ -2184,13 +2242,14 @@ wire        C122_TR_relay;
 wire [15:0] C122_Alex_Tx_data;
 wire [15:0] C122_Alex_Rx_data;
 
+
 // assign attenuators
 wire C122_10dB_atten = IF_ATTEN[0];
 wire C122_20dB_atten = IF_ATTEN[1];
 
 // define and concatenate the Tx data to send to Alex via SPI
 assign C122_Tx_red_led = FPGA_PTT; // turn red led on when we Tx
-assign C122_TR_relay   = FPGA_PTT; // turn on TR relay when PTT active
+assign C122_TR_relay   = (TR_relay_disable) ? 1'b0 : FPGA_PTT; // turn on TR relay when PTT active unless disabled
 
 assign C122_Alex_Tx_data = {C122_LPF[6:4], C122_Tx_red_led, C122_TR_relay, C122_ANT3, C122_ANT2,
                        C122_ANT1, C122_LPF[3:0], TX_YELLOW_LED, 3'b000};
@@ -2375,7 +2434,7 @@ debounce de_dash(.clean_pb(clean_dash), .pb(~KEY_DASH), .clk(IF_clk));
 */
 
 wire ref_80khz; 
-wire osc_80khz; 
+wire osc_80khz;
 
 // Use a PLL to divide 10MHz clock to 80kHz
 C10_PLL PLL2_inst (.inclk0(OSC_10MHZ), .c0(ref_80khz), .locked());

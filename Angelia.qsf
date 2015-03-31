@@ -210,6 +210,10 @@ set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_
 set_global_assignment -name MISC_FILE Hermes.dpf
 set_global_assignment -name MISC_FILE Hermes_V1.4/Hermes.dpf
 set_global_assignment -name MISC_FILE Hermes_V1.5/Hermes.dpf
+set_global_assignment -name VERILOG_FILE Angelia_Tx_fifo_ctrl.v
+set_global_assignment -name VERILOG_FILE Angelia_ADC.v
+set_global_assignment -name VERILOG_FILE Angelia_clk_lrclk_gen.v
+set_global_assignment -name VERILOG_FILE Angelia.v
 set_global_assignment -name VERILOG_FILE sp_rcv_ctrl.v
 set_global_assignment -name VERILOG_FILE Attenuator.v
 set_global_assignment -name VERILOG_FILE CRC32.v
