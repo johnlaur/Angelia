@@ -221,6 +221,9 @@
 						- Changed version number to v4.3						
 		23 Dec 2014 - Changed timing to reduce noise output on Tx and cure other noise issues on some radios.
 						- Changed version number to v4.4
+		16 Jan 2015 - Changed FPGA_PTT to use a de-bounced PTT input with the other inputs.
+						- Changed back to sending Alex data one time on the ALEX SPI bus each time any Alex data changes.
+						- Changed version number to v4.5
 						
 *** change global clock name **** 
   
@@ -431,7 +434,7 @@ assign  IO1 = 1'b0;  						// low to enable, high to mute
 parameter M_TPD   = 4;
 parameter IF_TPD  = 2;
 
-parameter  Angelia_version = 8'd44;		// Serial number of this version
+parameter  Angelia_version = 8'd45;		// Serial number of this version
 localparam Penny_serialno = 8'd00;		// Use same value as equ1valent Penny code 
 localparam Merc_serialno = 8'd00;		// Use same value as equivalent Mercury code
 
@@ -489,7 +492,7 @@ begin
   else  spc <= spc + 3'b001;
 end
 
-assign SPI_clk = spc[2];
+assign SPI_clk = spc[2]; // yields a 100KHz clock on the SPI bus
 
 wire	Apollo_clk;
 wire 	IF_locked;
@@ -2324,8 +2327,7 @@ begin
  end
 end
 
-assign FPGA_PTT = (IF_Rx_ctrl_0[0] | CW_PTT | ~PTT); // IF_Rx_ctrl_0 only updated when we get correct sync sequence. CW_PTT is used when internal CW is selected
-
+assign FPGA_PTT = (IF_Rx_ctrl_0[0] | CW_PTT | clean_PTT_in); // IF_Rx_ctrl_0 only updated when we get correct sync sequence. CW_PTT is used when internal CW is selected
 
 //------------------------------------------------------------
 //  Angelia on-board attenuators 
@@ -2509,7 +2511,36 @@ wire C122_10dB_atten = IF_ATTEN[0];
 wire C122_20dB_atten = IF_ATTEN[1];
 
 // define and concatenate the Tx data to send to Alex via SPI
-assign C122_Tx_red_led = FPGA_PTT; // turn red led on when we Tx
+assign C122_Tx_red_led = FPGA_PTT; // turn red led on when we Tx                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 assign C122_TR_relay   = (TR_relay_disable) ? 1'b0 : FPGA_PTT; // turn on TR relay when PTT active unless disabled
 
 assign C122_Alex_Tx_data = {C122_LPF[6:4], C122_Tx_red_led, C122_TR_relay, C122_ANT3, C122_ANT2,
