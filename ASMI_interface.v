@@ -92,23 +92,28 @@ case (state)
 		write_enable <= 1'b1;
 		sector_erase <= 1'b1;
 		state <= 2;
+		reset_delay <= 0;
 	end 
 // wait until erase has completed
 2:	begin
 		write_enable <= 0;
 		sector_erase <= 0;
 		if (busy) state <= 2;
-		else if (address != 24'h1F0000) begin 
+		else if (address <= 24'h2F0000) begin 
 				address <= address + 24'h010000;
 				state <= 1;
 		end 
-		else state <= 3;
+		else 
+			state <= 3;
 	end
+	
 // let user know that erase has completed
 3:	begin
-		erase_done <= 1'b1;
-		state <= 4;
-	end 
+			erase_done <= 1'b1;
+			state <= 4;
+			reset_delay <= 0;
+	end
+	
 // wait for the Tx to ack then return, loop here otherwise
 4:	begin
 		if (erase_done_ACK) state <= 0;

@@ -157,8 +157,11 @@
 	1 Feb 2014		- fixed bug with Rx2 freq assignment via common_Merc_freq bit via C&C byte stream; affected diversity ops
 						- changed Rx5 phase word and input source to depend upon T/R state
 						- changed version number to v2.5
-	3 Feb 2014	   - modified LPF switch point to assign the 17/15m LPF on 12m
+	3 Feb 2014		- 	modified LPF switch point to assign the 17/15m LPF on 12m
 						- changed version number to v2.6
+	6 Feb 2014		- fixed bug in ASMI module that prevented HPSDRProgrammer from working properly
+						- changed version number to v2.7
+
 	
 
 
@@ -372,7 +375,7 @@ assign  IO1 = 1'b0;  						// low to enable, high to mute
 parameter M_TPD   = 4;
 parameter IF_TPD  = 2;
 
-parameter  Angelia_version = 8'd26;		// Serial number of this version
+parameter  Angelia_version = 8'd27;		// Serial number of this version
 localparam Penny_serialno = 8'd00;		// Use same value as equ1valent Penny code 
 localparam Merc_serialno = 8'd00;		// Use same value as equivalent Mercury code
 
