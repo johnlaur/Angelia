@@ -128,6 +128,8 @@
 						  to improve Alex switching reliability.
 	30 May			- added independent control of attenuator on ADC2.
 						- changed version number to 1.9
+	2 Sept			- changed automatic LPF switching to use 17/15M filter on 12M to increase power out on ANAN-100D on 12M
+						- changed version number to 2.0
 						
 						*** change global clock name **** 
   
@@ -192,7 +194,7 @@ module Angelia(INA, INA_2,
 parameter M_TPD   = 4;
 parameter IF_TPD  = 2;
 
-parameter  Angelia_version = 8'd19;		// Serial number of this version
+parameter  Angelia_version = 8'd20;		// Serial number of this version
 localparam Penny_serialno = 8'd00;		// Use same value as equ1valent Penny code 
 localparam Merc_serialno = 8'd00;		// Use same value as equivalent Mercury code
 
