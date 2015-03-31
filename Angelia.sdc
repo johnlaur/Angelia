@@ -47,6 +47,8 @@ create_clock -name {OSC_10MHZ} -period 10.000MHz [get_ports {OSC_10MHZ}]
 create_clock -name {_122MHz} -period 122.880MHz [get_ports {_122MHz}]
 create_clock -name {PHY_RX_CLOCK} -period 25.000MHz [get_ports {PHY_RX_CLOCK}]
 create_clock -name {Attenuator:Attenuator_inst|clk_2} -period 24.000MHz [get_registers {Attenuator:Attenuator_inst|clk_2}]
+create_clock -name {Attenuator:Attenuator_ADC1|clk_2} -period 24.000MHz [get_registers {Attenuator:Attenuator_ADC1|clk_2}]
+create_clock -name {Attenuator:Attenuator_ADC2|clk_2} -period 24.000MHz [get_registers {Attenuator:Attenuator_ADC2|clk_2}]
 
 derive_pll_clocks
 
@@ -59,7 +61,6 @@ derive_clock_uncertainty
 create_generated_clock -divide_by 2 -source PHY_RX_CLOCK -name PHY_RX_CLOCK_2  [get_registers {PHY_RX_CLOCK_2}]
 create_generated_clock -name {Angelia_clk_lrclk_gen:clrgen|BCLK} -source [get_ports {LTC2208_122MHz}] -divide_by 40 [get_registers {Angelia_clk_lrclk_gen:clrgen|BCLK}] 
 create_generated_clock -divide_by 8  -source Angelia_clk_lrclk_gen:clrgen|BCLK 	[get_registers {spc[2]}]
-
 
 #**************************************************************
 # Set Clock Latency
@@ -124,20 +125,28 @@ set_multicycle_path -from PLL_IF_inst|altpll_component|auto_generated|pll1|clk[1
 set_multicycle_path -from PLL_IF_inst|altpll_component|auto_generated|pll1|clk[2] -to * -setup 3
 set_multicycle_path -from PLL_IF_inst|altpll_component|auto_generated|pll1|clk[2] -to * -hold 2
 #
-set_multicycle_path -from Attenuator:Attenuator_inst|clk_2 -to * -setup 4
-set_multicycle_path -from Attenuator:Attenuator_inst|clk_2 -to * -hold 3
+#set_multicycle_path -from Attenuator:Attenuator_inst|clk_2 -to * -setup 4
+#set_multicycle_path -from Attenuator:Attenuator_inst|clk_2 -to * -hold 3
 #
 set_multicycle_path -from PHY_RX_CLOCK_2 -to * -setup 2
 set_multicycle_path -from PHY_RX_CLOCK_2 -to * -hold 1
 #
 set_multicycle_path -from Attenuator:Attenuator_inst|clk_2 -to * -setup 3
 set_multicycle_path -from Attenuator:Attenuator_inst|clk_2 -to * -hold 2
+#
+#set_multicycle_path -from Attenuator:Attenuator_ADC1|clk_2 -to * -setup 4
+#set_multicycle_path -from Attenuator:Attenuator_ADC1|clk_2 -to * -hold 3
+#
+#set_multicycle_path -from Attenuator:Attenuator_ADC2|clk_2 -to * -setup 4
+#set_multicycle_path -from Attenuator:Attenuator_ADC2|clk_2 -to * -hold 3
 
 
 #**************************************************************
 # Set Maximum Delay
 #**************************************************************
 set_max_delay -from Attenuator:Attenuator_inst|clk_2 -to PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] 10
+set_max_delay -from Attenuator:Attenuator_ADC1|clk_2 -to * 10
+set_max_delay -from Attenuator:Attenuator_ADC2|clk_2 -to * 10
 set_max_delay -from reset -to * 20
 set_max_delay -from * -to Led_flash:Flash_LED3|counter[*] 15
 set_max_delay -from * -to Led_flash:Flash_LED6|counter[*] 15
@@ -151,6 +160,8 @@ set_max_delay -from * -to Led_flash:Flash_LED10|LED 15
 # Set Minimum Delay
 #**************************************************************
 set_min_delay -from Attenuator:Attenuator_inst|clk_2 -to PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] -5
+set_min_delay -from Attenuator:Attenuator_ADC1|clk_2 -to * -5
+set_min_delay -from Attenuator:Attenuator_ADC2|clk_2 -to * -5
 set_min_delay -from reset -to * -5
 set_min_delay -from * -to Led_flash:Flash_LED3|counter[*] -5
 set_min_delay -from * -to Led_flash:Flash_LED6|counter[*] -5

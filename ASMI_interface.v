@@ -17,12 +17,11 @@
 //  along with this program; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-
-
-// ASMI_interface - copyright 2010, 2011 Phil Harman VK6APH
+// ASMI_interface - copyright 2010, 2011, 2012, 2013 Phil Harman VK6APH
 
 /*
 	change log:
+	2013 May 15 - added two clock delay when busy clears as per Altera recommendations.
 
 
 */
@@ -98,9 +97,9 @@ case (state)
 		write_enable <= 0;
 		sector_erase <= 0;
 		if (busy) state <= 2;
-		else if (address < 24'h2C0000) begin 
-				address <= address + 24'h040000;
-				state <= 1;
+		else if (address != 24'h1F0000) begin 
+				address <= address + 24'h010000;
+				state <= 11;
 		end 
 		else state <= 3;
 	end
@@ -152,9 +151,8 @@ case (state)
 			 state <= state + 1'b1;
 		end 
 		else if (!busy && IF_Rx_used > 254  && send_more == 0) begin
-			address <= address + 24'd256;		// increment write address to point to next page boundary
-			if (address > 24'h2C0000 | address == 24'h000000) page <= num_blocks;
-			else state <= 5;
+			address <= address + 24'd256;		// increment write address to point to next page boundry
+			state <= 13;
 		end
 	end 
 
@@ -173,7 +171,13 @@ case (state)
 				NCONFIG <= 1'b1;				// then reload FPGA from Flash	
 		end 																
 		else reset_delay <= reset_delay + 1'b1;
-	end 
+	end
+// two clock delay after busy is cleared
+11: state <= 12;
+12: state <= 1;
+// two clock delay after bysy is cleared
+13: state <= 14;
+14: state <= 5;	
 	
 default: state <= 0;
 		

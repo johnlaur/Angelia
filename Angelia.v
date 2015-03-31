@@ -124,6 +124,10 @@
 						  EEPROM to be erased and to ensure the EEPROM is not writing into undesired locations when using 
 						  HPSDRProgrammer to update firmware.  
 						- changed version number to 1.8
+	15 May			- modified the Alex SPI bus control module to send Alex commands twice whenever any Alex setting is changed,
+						  to improve Alex switching reliability.
+	30 May			- added independent control of attenuator on ADC2.
+						- changed version number to 1.9
 						
 						*** change global clock name **** 
   
@@ -188,7 +192,7 @@ module Angelia(INA, INA_2,
 parameter M_TPD   = 4;
 parameter IF_TPD  = 2;
 
-parameter  Angelia_version = 8'd18;		// Serial number of this version
+parameter  Angelia_version = 8'd19;		// Serial number of this version
 localparam Penny_serialno = 8'd00;		// Use same value as equ1valent Penny code 
 localparam Merc_serialno = 8'd00;		// Use same value as equivalent Mercury code
 
@@ -223,11 +227,11 @@ output SPI_SCK;								// SPI clock to Alex or Apollo
 output J15_5;									// SPI Rx data load strobe to Alex / Apollo enable
 output J15_6;									// SPI Tx data load strobe to Alex / Apollo ~reset
 output ATTN_CLK;								// clock for input attenuator ADC 1 
-output wire ATTN_CLK_2;							// clock for input attenuator ADC 2
+output wire ATTN_CLK_2;						// clock for input attenuator ADC 2
 output ATTN_DATA;								// data for input attenuator ADC 1
-output wire ATTN_DATA_2;							// data for input attenuator ADC 2
+output wire ATTN_DATA_2;					// data for input attenuator ADC 2
 output ATTN_LE;								// Latch enable for input attenuator ADC 1
-output wire ATTN_LE_2;								// Latch enable for input attenuator ADC 2
+output wire ATTN_LE_2;						// Latch enable for input attenuator ADC 2
 output wire RAND;								// high turns ramdom on ADC 1
 output wire RAND_2;							// high turns ramdom on ADC 2
 output wire PGA;								// high turns LTC2208 internal preamp on ADC 1
@@ -1962,9 +1966,11 @@ reg         Alex_6m_preamp; 		// set if manual selection and 6m preamp selected
 reg   [6:0] Alex_manual_LPF;		// Alex LPF relay selection in manual mode
 reg   [5:0] Alex_manual_HPF;		// Alex HPF relay selection in manual mode
 reg   [4:0] Angelia_atten;			// 0-31 dB Heremes attenuator value
-reg			Angelia_atten_enable; // enable/disable bit for Angelia attenuators
+reg			atten_enable; 			// enable/disable control for input attenuator 1
 reg			TR_relay_disable;		// Alex TR relay disable (0 = TR relay enabled, 1 = TR relay disabled)
-
+//reg			Angelia_atten_select; // select between attenuator for ADC1 or ADC2 (0 = ADC1 atten, 1 = ADC2 atten)
+reg	[4:0] Angelia_atten2;		// attenuation setting for input attenuator 2 (input atten for ADC2), 0-31 dB
+reg			atten2_enable; 		//enable/disable control for input attenuator 2 (0=disabled, 1= enabled)
 
 always @ (posedge IF_clk)
 begin 
@@ -2002,8 +2008,10 @@ begin
 	 Alex_manual_LPF	  <= 7'b0;		// default manual settings, no Alex LPF filters selected
 	 IF_Line_In_Gain	  <= 5'b0;		// default line-in gain at min
 	 Angelia_atten		  <= 5'b0;		// default zero input attenuation
-	 Angelia_atten_enable <= 1'b0;    // default disable Angelia attenuators
-	
+	 atten_enable 		  <= 1'b0;     // default disable Angelia attenuator 1
+	 //Angelia_atten_select <= 1'b0; 	// default input attenuator is ADC1
+	 Angelia_atten2		<= 5'b0;		// default attenuation setting for input attenuator 2 (input atten for ADC2)
+	 atten2_enable 		<= 1'b0;		// default disable input attenuator 2 
   end
   else if (IF_Rx_save) 					// all Rx_control bytes are ready to be saved
   begin 										// Need to ensure that C&C data is stable 
@@ -2046,10 +2054,16 @@ begin
 	if (IF_Rx_ctrl_0[7:1] == 7'b0001_010)
 	begin
 	  IF_Line_In_Gain   <= IF_Rx_ctrl_2[4:0];		// decode line-in gain setting
-	  Angelia_atten      <= IF_Rx_ctrl_4[4:0];    // decode input attenuation setting
-	  Angelia_atten_enable <= IF_Rx_ctrl_4[5];    // decode Angelia attenuators enable/disable
+	  Angelia_atten     <= IF_Rx_ctrl_4[4:0];   	// decode input attenuation setting
+	  atten_enable 	  <= IF_Rx_ctrl_4[5];   	// decode Angelia attenuator 1 enable/disable
+	  //Angelia_atten_select <= IF_Rx_ctrl_4[6];   // decode input attenuator selection (0 = ADC1, 1 = ADC2)
 	end
-  end
+ 	if (IF_Rx_ctrl_0[7:1] == 7'b0001_011)
+	begin
+	  Angelia_atten2   	<= IF_Rx_ctrl_1[4:0];	// attenuation setting for input attenuator 2 (input atten for ADC2)
+	  atten2_enable 	   <= IF_Rx_ctrl_1[5];		// input attenuator 2 enable/disable (0=disabled, 1= enabled)
+	end
+ end
 end	
 
 always @ (posedge IF_clk)
@@ -2118,21 +2132,18 @@ assign FPGA_PTT = IF_Rx_ctrl_0[0]; // IF_Rx_ctrl_0 only updated when we get corr
 
 
 //------------------------------------------------------------
-//  Attenuator 
+//  Angelia on-board attenuators 
 //------------------------------------------------------------
 
-// set the attenuator according to whether Angelia_atten_enable and Preamp bits are set 
-wire [4:0] atten_data;
+// set the two input attenuators
+wire [4:0] atten_data_in;
+wire [4:0] atten2_data_in;
 
-assign atten_data = Angelia_atten_enable ? Angelia_atten : (Preamp ? 5'b0_0000 : 5'b1_0100); 
-
-Attenuator Attenuator_inst (.clk(IF_clk), .data(atten_data), .ATTN_CLK(ATTN_CLK), .ATTN_DATA(ATTN_DATA), .ATTN_LE(ATTN_LE));
-
-
-assign ATTN_CLK_2 = ATTN_CLK;
-assign ATTN_DATA_2 = ATTN_DATA;
-assign ATTN_LE_2 = ATTN_LE;
-
+assign atten_data_in = atten_enable ? Angelia_atten : (Preamp ? 5'b0_0000 : 5'b1_0100);
+assign atten2_data_in = atten2_enable ? Angelia_atten2 : 5'b0_0000;
+	
+Attenuator Attenuator_ADC1 (.clk(IF_clk), .data(atten_data_in), .ATTN_CLK(ATTN_CLK), .ATTN_DATA(ATTN_DATA), .ATTN_LE(ATTN_LE));
+Attenuator Attenuator_ADC2 (.clk(IF_clk), .data(atten2_data_in), .ATTN_CLK(ATTN_CLK_2), .ATTN_DATA(ATTN_DATA_2), .ATTN_LE(ATTN_LE_2));
 
 
 //////////////////////////////////////////////////////////////
@@ -2332,7 +2343,7 @@ assign C122_Alex_data = {C122_Alex_Tx_data[15:0], C122_Alex_Rx_data[15:0]};
 
 // should move Alex data into SPI_clk domain, but since it changes slowly should be OK for now. 
 
-SPI Alex_SPI_Tx (.Alex_data(C122_Alex_data), .SPI_data(Alex_SPI_SDO),
+SPI_Alex Alex_SPI_Tx (.Alex_data(C122_Alex_data), .SPI_data(Alex_SPI_SDO),
                  .SPI_clock(Alex_SPI_SCK), .Tx_load_strobe(SPI_TX_LOAD),
                  .Rx_load_strobe(SPI_RX_LOAD), .spi_clock(SPI_clk));	
 
