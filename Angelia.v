@@ -188,6 +188,8 @@
 							Note: in the case that the ADC control bits are 11, which Orion uses to select
 							ADC3, ADC1 is used instead as ADC3 does not exist on Angelia.  
 						- changed the version number to v3.4
+	 6 Jun 2014	   - Added PC control of "atten_on_Tx" via C&C bits C3[4:0] when C0 = 0001_110x
+						- Changed version number to v3.5
 
 						
 	
@@ -400,7 +402,7 @@ assign  IO1 = 1'b0;  						// low to enable, high to mute
 parameter M_TPD   = 4;
 parameter IF_TPD  = 2;
 
-parameter  Angelia_version = 8'd34;		// Serial number of this version
+parameter  Angelia_version = 8'd35;		// Serial number of this version
 localparam Penny_serialno = 8'd00;		// Use same value as equ1valent Penny code 
 localparam Merc_serialno = 8'd00;		// Use same value as equivalent Mercury code
 
@@ -2094,6 +2096,7 @@ reg   [5:0] keyer_speed; 			// CW keyer speed 0-60 WPM
 reg   [1:0] keyer_mode;				// 00 = straight/external/bug, 01 = Mode A, 10 = Mode B
 reg   [7:0] keyer_weight;			// keyer weight 33-66
 reg         keyer_spacing;			// 0 = off, 1 = on
+reg   [4:0] atten_on_Tx;			// Rx attenuation value to use when Tx is active
 
 always @ (posedge IF_clk)
 begin 
@@ -2143,8 +2146,7 @@ begin
     keyer_mode         <= 2'b0;	   // 00 = straight/external/bug, 01 = Mode A, 10 = Mode B
     keyer_weight       <= 8'b0;		// keyer weight 33-66
     keyer_spacing      <= 1'b0;	   // 0 = off, 1 = on
-
-	
+	 atten_on_Tx		  <= 5'b11111; // default Rx attenuation value to use when Tx is active	
   end
   else if (IF_Rx_save) 					// all Rx_control bytes are ready to be saved
   begin 										// Need to ensure that C&C data is stable 
@@ -2210,6 +2212,7 @@ begin
 	  ADC_RX5   			<= IF_Rx_ctrl_2[1:0];	// ADC to use for RX5: 00=ADC0, 01=ADC1, 10=ADC2
 	  ADC_RX6   			<= IF_Rx_ctrl_2[3:2];	// ADC to use for RX6: 00=ADC0, 01=ADC1, 10=ADC2
 	  ADC_RX7   			<= IF_Rx_ctrl_2[5:4];	// ADC to use for RX7: 00=ADC0, 01=ADC1, 10=ADC2
+	  atten_on_Tx			<= IF_Rx_ctrl_3[4:0];	// get Rx attenuation value to use when Tx is active
 	  end
 
 	  if (IF_Rx_ctrl_0[7:1] == 7'b0001_111)
@@ -2302,12 +2305,16 @@ assign FPGA_PTT = (IF_Rx_ctrl_0[0] | CW_PTT); // IF_Rx_ctrl_0 only updated when 
 // set the two input attenuators
 wire [4:0] atten_data_in;
 wire [4:0] atten2_data_in;
+wire [4:0] attenuator1;
+wire [4:0] attenuator2;
 
 assign atten_data_in = Angelia_atten_enable ? Angelia_atten : (Preamp ? 5'b0_0000 : 5'b1_0100);
 assign atten2_data_in = atten2_enable ? Angelia_atten2 : 5'b0_0000;
+assign attenuator1 = FPGA_PTT ? atten_on_Tx : atten_data_in;
+assign attenuator2 = FPGA_PTT ? atten_on_Tx : atten2_data_in;
 	
-Attenuator Attenuator_ADC1 (.clk(IF_clk), .data(atten_data_in), .ATTN_CLK(ATTN_CLK), .ATTN_DATA(ATTN_DATA), .ATTN_LE(ATTN_LE));
-Attenuator Attenuator_ADC2 (.clk(IF_clk), .data(atten2_data_in), .ATTN_CLK(ATTN_CLK_2), .ATTN_DATA(ATTN_DATA_2), .ATTN_LE(ATTN_LE_2));
+Attenuator Attenuator_ADC1 (.clk(IF_clk), .data(attenuator1), .ATTN_CLK(ATTN_CLK), .ATTN_DATA(ATTN_DATA), .ATTN_LE(ATTN_LE));
+Attenuator Attenuator_ADC2 (.clk(IF_clk), .data(attenuator2), .ATTN_CLK(ATTN_CLK_2), .ATTN_DATA(ATTN_DATA_2), .ATTN_LE(ATTN_LE_2));
 
 
 //////////////////////////////////////////////////////////////
