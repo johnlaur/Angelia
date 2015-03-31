@@ -161,6 +161,9 @@
 						- changed version number to v2.6
 	6 Feb 2014		- fixed bug in ASMI module that prevented HPSDRProgrammer from working properly
 						- changed version number to v2.7
+	7 Feb 2014		- reduced the EEPROM erase time, in ASMI_interface.v, when loading firmware via ethernet connection
+						- changed version number to v2.8
+						
 
 	
 
@@ -375,7 +378,7 @@ assign  IO1 = 1'b0;  						// low to enable, high to mute
 parameter M_TPD   = 4;
 parameter IF_TPD  = 2;
 
-parameter  Angelia_version = 8'd27;		// Serial number of this version
+parameter  Angelia_version = 8'd28;		// Serial number of this version
 localparam Penny_serialno = 8'd00;		// Use same value as equ1valent Penny code 
 localparam Merc_serialno = 8'd00;		// Use same value as equivalent Mercury code
 
