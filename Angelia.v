@@ -73,6 +73,9 @@
 	               - Released as v0.2
 	15 August	   - Fixed de-randomizer code bug
 						- Released as v0.3
+	16 August		- fixed INA_2[9] pin assignment error; moved INA_2[9] from FPGA pin L26 to L27
+						- switched ADC "A" and ADC "B" inputs to receiver modules for stability test
+						- Released as v0.4
 	
 	*** change global clock name **** 
   
@@ -121,7 +124,7 @@ NOTES:
 
 module Angelia(INA, INA_2, 
 				CBCLK, CLRCIN, CDOUT, CDIN, PTT, Status_LED,KEY_DOT, KEY_DASH, FPGA_PTT,
-				CMCLK, LTC2208_122MHz, CLRCOUT, ATTN_CLK, ATTN_CLK_2, ATTN_DATA, ATTN_DATA_2,
+				CMCLK, LTC2208_122MHz, LTC2208_122MHz_2,CLRCOUT, ATTN_CLK, ATTN_CLK_2, ATTN_DATA, ATTN_DATA_2,
 				ATTN_LE, ATTN_LE_2, RAND, RAND_2, PGA, PGA_2, DITH, DITH_2, SHDN, SHDN_2, 
 				OVERFLOW, OVERFLOW_2,
 				USEROUT0, USEROUT1, USEROUT2, USEROUT3, USEROUT4, USEROUT5, USEROUT6,
@@ -137,7 +140,7 @@ module Angelia(INA, INA_2,
 parameter M_TPD   = 4;
 parameter IF_TPD  = 2;
 
-parameter  Angelia_version = 8'd3;		// Serial number of this version
+parameter  Angelia_version = 8'd4;		// Serial number of this version
 localparam Penny_serialno = 8'd00;		// Use same value as equ1valent Penny code 
 localparam Merc_serialno = 8'd00;		// Use same value as equivalent Mercury code
 
@@ -150,7 +153,8 @@ localparam read_reg_address = 5'd31; 	// PHY register to read from - gives conne
 input wire [15:0]INA;						// samples from LTC2208 #1
 input wire [15:0]INA_2;						// samples from LTC2208 #2
 
-input wire LTC2208_122MHz;					// 122.88MHz from LTC2208_122MHz pin 
+input wire LTC2208_122MHz;					// 122.88MHz from LTC2208_122MHz pin on "A" ADC
+input wire LTC2208_122MHz_2;				// 122.88MHz from LTC2208_122MHz pin on "B" ADC 
 input wire _122MHz;				   		// 122.88MHz from VCXO
 output wire CMCLK; 			   			// Master Clock to TLV320 
 output wire Status_LED;             	// FPGA Status LED
@@ -303,6 +307,7 @@ cdc_sync #(1)
 //---------------------------------------------------------
 
 wire C122_clk = LTC2208_122MHz;
+wire C122_clk_2 = LTC2208_122MHz_2;
 wire IF_clk;
 wire CLRCLK;
 
@@ -1010,7 +1015,7 @@ begin
 		if (INA_2[0]) temp_ADC[1] <= {~INA_2[15:1], INA_2[0]};
 		else temp_ADC[1] <= INA_2;	
 	end
-	else temp_ADC[1] <= INA_2;
+	else temp_ADC[1] <= INA_2; //{INA_2[15:14],1'b0, INA_2[12:0]}; //INA_2;   ......TEST/...JAM
 	
 end 
 
@@ -1159,7 +1164,7 @@ genvar i;
 generate
   for (i=0; i<NR; i=i+1)
     begin: receivers
-	 receiver receiver_inst0(
+/*	 receiver receiver_inst0(
 	   //control
 	   .clock(C122_clk),
 	   .rate({C122_DFS1, C122_DFS0}), //00=48, 01=96, 10=192 kHz
@@ -1172,7 +1177,7 @@ generate
 	   .out_data_Q(rx_Q[i])
 	   );
 		
-		
+*/		
     // Transfer the receiver data and strobe from C122_clk to IF_clk
     cdc_mcp #(48)
 	    IQ_sync (.a_data ({rx_I[i], rx_Q[i]}), .a_clk(C122_clk),.b_clk(IF_clk), .a_data_rdy(strobe[i]),
@@ -1185,6 +1190,31 @@ generate
     end
 endgenerate
 
+	 receiver receiver_inst0(
+	   //control
+	   .clock(C122_clk),
+	   .rate({C122_DFS1, C122_DFS0}), //00=48, 01=96, 10=192 kHz
+	   .frequency(C122_sync_phase_word[0]), //force all rcvrs to rx1 freq
+	   .out_strobe(strobe[0]),		
+	   //input
+	   .in_data(temp_ADC[1]),		
+	   //output
+	   .out_data_I(rx_I[0]),
+	   .out_data_Q(rx_Q[0])
+	   );
+
+	 receiver receiver_inst1(
+	   //control
+	   .clock(C122_clk_2),
+	   .rate({C122_DFS1, C122_DFS0}), //00=48, 01=96, 10=192 kHz
+	   .frequency(C122_sync_phase_word[0]), //force all rcvrs to rx1 freq
+	   .out_strobe(strobe[1]),		
+	   //input
+	   .in_data(temp_ADC[0]),		
+	   //output
+	   .out_data_I(rx_I[1]),
+	   .out_data_Q(rx_Q[1])
+	   );
 
 
 
