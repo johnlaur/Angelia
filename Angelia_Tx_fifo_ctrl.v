@@ -217,8 +217,8 @@ begin
     0:
     begin
       C1_DATA = {4'b0,IO8,IO6,IO5,IO4,ADC_OVERLOAD};
-      C2_DATA = Merc_serialno;
-      C3_DATA = Penny_serialno;
+      C2_DATA = Angelia_version; //Merc_serialno;
+      C3_DATA = Angelia_version; //Penny_serialno;
       C4_DATA = Angelia_version;
     end
 

@@ -69,7 +69,10 @@
 	               - Changed device EP4CE115F29C8
 						- Reallocated pin assignments for EP4CE115F29C8 
 	
-	31 July			- Added support for second LTC2208 ADC, renamed relevant modules "Angelia"
+	31 July			- Added support for second LTC2208 ADC, renamed relevant modules "Angelia" 
+	               - Released as v0.2
+	15 August	   - Fixed de-randomizer code bug
+						- Released as v0.3
 	
 	*** change global clock name **** 
   
@@ -134,7 +137,7 @@ module Angelia(INA, INA_2,
 parameter M_TPD   = 4;
 parameter IF_TPD  = 2;
 
-parameter  Angelia_version = 8'd2;		// Serial number of this version
+parameter  Angelia_version = 8'd3;		// Serial number of this version
 localparam Penny_serialno = 8'd00;		// Use same value as equ1valent Penny code 
 localparam Merc_serialno = 8'd00;		// Use same value as equivalent Mercury code
 
@@ -995,22 +998,20 @@ cdc_sync #(16)
 reg [15:0]temp_ADC[0:NR-1];
 
 always @ (posedge C122_clk) 
-begin 
-  if (RAND)
-  begin	// RAND set so de-ramdomize
-    if (INA[0]) begin
-      temp_ADC[0] <= {~INA[15:1],INA[0]};
-		temp_ADC[1] <= {~INA_2[15:1],INA_2[0]};
-		end
-		else begin
-      temp_ADC[0] <= INA;
-		temp_ADC[1] <= INA_2;
-		end
-  end
-  else begin
-    temp_ADC[0] <= INA;  // not set so just copy data
-	 temp_ADC[1] <= INA_2;
-	 end
+begin
+ 
+   if (RAND) begin	// RAND set so de-ramdomize
+		if (INA[0]) temp_ADC[0] <= {~INA[15:1],INA[0]};
+		else temp_ADC[0] <= INA;
+	end
+   else temp_ADC[0] <= INA;  // not set so just copy data	 
+		
+	if (RAND_2) begin
+		if (INA_2[0]) temp_ADC[1] <= {~INA_2[15:1], INA_2[0]};
+		else temp_ADC[1] <= INA_2;	
+	end
+	else temp_ADC[1] <= INA_2;
+	
 end 
 
 //------------------------------------------------------------------------------
@@ -1153,55 +1154,6 @@ begin
 	   C122_sync_phase_word_Tx <= C122_ratio_Tx[56:25];
   end
 end
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 genvar i;
 generate
