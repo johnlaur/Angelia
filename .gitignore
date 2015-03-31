@@ -1,0 +1,30 @@
+# Output files
+*.pof
+*.rbf
+*.sof
+*.ttf
+
+# Incremental compiliation and ModelSim files
+[Dd][Bb]/
+[Ss]imulation/
+
+# Report files
+*.done
+*.qarlog
+*.rpt
+*.summary
+
+#Generated files
+[Tt]iming/
+*.qws
+*.cmp
+*.dpf
+*.eqn
+*.html
+*.jpg
+*.pin
+*.ppf
+
+#Backup files
+*.bak
+*.qar
