@@ -119,7 +119,7 @@ reg       [3:0] AD_state;
 reg       [3:0] AD_state_next;
 reg       [5:0] AD_timer;
 
-localparam  MAX_ADDR = 3; 
+localparam  MAX_ADDR = 4; 
 reg       [4:0] tx_addr; // round robin address from 0 to MAX_ADDR
 reg       [7:0] C1_DATA, C2_DATA, C3_DATA, C4_DATA;
 

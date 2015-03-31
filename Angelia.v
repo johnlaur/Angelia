@@ -192,6 +192,8 @@
 						- Changed version number to v3.5
 	15 Jun 2014		- Added support for ADC overflow alerting for ADC2 in TXFC module
 						- Changed version number to v3.6
+	23 Jun 2014		- Fixed bug with ADC2 overflow status reporting, in TXFC module
+						- Changed version number to v3.7
 
 						
 	
@@ -404,7 +406,7 @@ assign  IO1 = 1'b0;  						// low to enable, high to mute
 parameter M_TPD   = 4;
 parameter IF_TPD  = 2;
 
-parameter  Angelia_version = 8'd36;		// Serial number of this version
+parameter  Angelia_version = 8'd37;		// Serial number of this version
 localparam Penny_serialno = 8'd00;		// Use same value as equ1valent Penny code 
 localparam Merc_serialno = 8'd00;		// Use same value as equivalent Mercury code
 

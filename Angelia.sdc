@@ -185,7 +185,7 @@ set_min_delay -from LTC2208_122MHz -to spc[2] -9
 set_min_delay -from LTC2208_122MHz_2 -to LTC2208_122MHz -2
 set_min_delay -from LTC2208_122MHz_2 -to LTC2208_122MHz_2 -2
 
-set_min_delay -from PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] -to Attenuator:Attenuator_ADC1|clk_2 -2
+set_min_delay -from PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] -to Attenuator:Attenuator_ADC1|clk_2 -3
 set_min_delay -from PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] -to Attenuator:Attenuator_ADC2|clk_2 -5
 set_min_delay -from PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] -to PLL_IF_inst|altpll_component|auto_generated|pll1|clk[1] -2
 set_min_delay -from PLL_IF_inst|altpll_component|auto_generated|pll1|clk[0] -to PLL_IF_inst|altpll_component|auto_generated|pll1|clk[2] -5
