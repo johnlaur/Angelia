@@ -238,6 +238,11 @@
 						- Changed version number to v4.8
 		25 Apr 2015 - Fixed Line-In bug in TLV320_SPI.v
 						- Changed version number to v4.9
+	   30 Apr 2015 - Added external CW keying capability to iambic.v module via digital input IO4 
+						  while iambic CW mode is selected (pin 9 on J16 Angelia, pin 9 rear panel accy 
+						  jack on ANAN-100D) , key to ground, unkey is +3.3VDC via pull up resistor on Angelia board,
+						  IO4 input is debounced  
+						- Changed version number to v5.0
 	
 *** change global clock name **** 
   
@@ -448,7 +453,7 @@ assign  IO1 = 1'b0;  						// low to enable, high to mute
 parameter M_TPD   = 4;
 parameter IF_TPD  = 2;
 
-parameter  Angelia_version = 8'd49;		// Serial number of this version
+parameter  Angelia_version = 8'd50;		// Serial number of this version
 localparam Penny_serialno = 8'd00;		// Use same value as equ1valent Penny code 
 localparam Merc_serialno = 8'd00;		// Use same value as equivalent Mercury code
 
@@ -1168,7 +1173,7 @@ assign  CWX = (IF_I_PWM[0] & internal_CW);
 
 iambic #(48) iambic_inst (.clock(CLRCLK), .cw_speed(keyer_speed), .iambic(iambic), .keyer_mode(keyer_mode), .weight(keyer_weight), 
                           .letter_space(keyer_spacing), .dot_key(!KEY_DOT | dot), .dash_key(!KEY_DASH | dash),
-								  .CWX(CWX), .paddle_swap(key_reverse), .keyer_out(keyout));
+								  .CWX(CWX), .paddle_swap(key_reverse), .keyer_out(keyout), .IO4(clean_IO4));
 						  
 //--------------------------------------------------------------------------------------------
 //  	Calculate  Raised Cosine profile for sidetone and CW envelope when internal CW selected 
@@ -2669,6 +2674,12 @@ debounce de_dot(.clean_pb(clean_dot), .pb(~KEY_DOT), .clk(IF_clk));
 
 debounce de_dash(.clean_pb(clean_dash), .pb(~KEY_DASH), .clk(IF_clk));
 
+//
+// Debounce IO4 external CW digital input 
+//
+wire 				 clean_IO4;						// decounced IO4 CW input
+
+debounce de_IO4(.clean_pb(clean_IO4), .pb(~IO4), .clk(IF_clk));
 
 //---------------------------------------------------------
 //    PLLs 
