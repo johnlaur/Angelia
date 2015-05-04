@@ -236,6 +236,8 @@
 		15 Feb 2015 - Changed clock phase shift from 90 degrees to 15 degrees to clock data into
 						  the TX DAC
 						- Changed version number to v4.8
+		25 Apr 2015 - Fixed Line-In bug in TLV320_SPI.v
+						- Changed version number to v4.9
 	
 *** change global clock name **** 
   
@@ -446,7 +448,7 @@ assign  IO1 = 1'b0;  						// low to enable, high to mute
 parameter M_TPD   = 4;
 parameter IF_TPD  = 2;
 
-parameter  Angelia_version = 8'd48;		// Serial number of this version
+parameter  Angelia_version = 8'd49;		// Serial number of this version
 localparam Penny_serialno = 8'd00;		// Use same value as equ1valent Penny code 
 localparam Merc_serialno = 8'd00;		// Use same value as equivalent Mercury code
 

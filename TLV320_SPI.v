@@ -93,73 +93,73 @@ reg [23:0] tlv_timeout;
 
 always @ (posedge clk)		
 begin
-  if (tlv_timeout != (200*12288))        // 200mS @CMCLK= 12.288Mhz
+	if (tlv_timeout != (200*12288))        // 200mS @CMCLK= 12.288Mhz ...one time delay at startup
     tlv_timeout <= tlv_timeout + 1'd1;
+	else
+	begin
+		case (TLV)
+		4'd0:
+		begin
+			nCS <= 1'b1;        					// set TLV320 CS high
+			bit_cnt <= 4'd15;   					// set starting bit count to 15
+			TLV <= 4'd1;
+		end
 
-  case (TLV)
-  4'd0:
-  begin
-    nCS <= 1'b1;        					// set TLV320 CS high
-    bit_cnt <= 4'd15;   					// set starting bit count to 15
-    if (tlv_timeout == (200*12288)) 	// wait for 200mS timeout
-      TLV <= 4'd1;
-    else
-      TLV <= 4'd0;
-  end
+		4'd1:
+		begin
+			nCS  <= 1'b0;                		// start data transfer with nCS low
+			MOSI <= TLV_data[bit_cnt];  			// set data up
+			TLV  <= 4'd2;
+		end
 
-  4'd1:
-  begin
-    nCS  <= 1'b0;                		// start data transfer with nCS low
-    MOSI <= TLV_data[bit_cnt];  			// set data up
-    TLV  <= 4'd2;
-  end
+		4'd2:
+		begin
+			SSCK <= 1'b1;               			// clock data into TLV320
+			TLV  <= 4'd3;
+		end
 
-  4'd2:
-  begin
-    SSCK <= 1'b1;               			// clock data into TLV320
-    TLV  <= 4'd3;
-  end
+		4'd3:
+		begin
+			SSCK <= 1'b0;               			// reset clock
+			TLV  <= 4'd4;
+		end
 
-  4'd3:
-  begin
-    SSCK <= 1'b0;               			// reset clock
-    TLV  <= 4'd4;
-  end
+		4'd4:
+		begin
+			if (bit_cnt == 0) 						// word transfer is complete, check for any more
+				TLV <= 4'd5;
+			else
+			begin
+				bit_cnt <= bit_cnt - 1'b1;
+				TLV <= 4'd1;    						// go round again
+			end
+		end
 
-  4'd4:
-  begin
-    if (bit_cnt == 0) 						// word transfer is complete, check for any more
-      TLV <= 4'd5;
-    else
-    begin
-      bit_cnt <= bit_cnt - 1'b1;
-      TLV <= 4'd1;    						// go round again
-    end
-    begin 
-    prev_boost <= boost; 	   			// save the current boost setting 
-    prev_line <= line;		   			// save the current line in setting
-	 prev_line_in_gain <= line_in_gain; // save the current line-in gain setting
-    end 
-  end
-
-  4'd5:
-  begin
-    if (load == 7) begin					// stop when all data sent, and wait for boost to change
-		nCS <= 1'b1;        					// set CS high               
-		  if (boost != prev_boost || line != prev_line || line_in_gain != prev_line_in_gain) begin  // has boost or line in or line-in gain changed?
-			load <= 0;
-			TLV <= 4'd0;
-		  end
-	      else TLV <= 4'd5;     			// hang out here forever
-	end
-    else begin									// else get next data             	
-      TLV  <= 4'd0;           
-      load <= load + 3'b1;  				// select next data word to send
-    end
-  end
+		4'd5:
+		begin
+			if (load == 7) 
+			begin					// stop when all data sent, and wait for boost to change
+				nCS <= 1'b1;        					// set CS high               
+				if (boost != prev_boost || line != prev_line || line_in_gain != prev_line_in_gain) 
+				begin  // has boost or line in or line-in gain changed?
+					load <= 0;
+					TLV <= 4'd0;
+					prev_boost <= boost; 	   			// save the current boost setting 
+					prev_line <= line;		   			// save the current line in setting
+					prev_line_in_gain <= line_in_gain; // save the current line-in gain setting
+				end
+				else TLV <= 4'd5;     			// hang out here until boost or line or line-in-gain changes
+			end
+			else 
+			begin									// else get next data             	
+				TLV  <= 4'd0;           
+				load <= load + 3'b1;  				// select next data word to send
+			end
+		end
   
   default: TLV <= 4'd0;
   endcase
+  end
 end
 
 endmodule
