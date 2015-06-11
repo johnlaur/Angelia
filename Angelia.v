@@ -243,7 +243,10 @@
 						  jack on ANAN-100D) , key to ground, unkey is +3.3VDC via pull up resistor on Angelia board,
 						  IO4 input is debounced  
 						- Changed version number to v5.0
-	
+		10 Jun 2015 - fixed bug with Rx2 phase word assignment that caused random initial phase relationship between
+						  Rx1 and Rx2 on powerup of Angelia in diversity mode
+						- Changed version number to v5.1
+						
 *** change global clock name **** 
   
 
@@ -453,7 +456,7 @@ assign  IO1 = 1'b0;  						// low to enable, high to mute
 parameter M_TPD   = 4;
 parameter IF_TPD  = 2;
 
-parameter  Angelia_version = 8'd50;		// Serial number of this version
+parameter  Angelia_version = 8'd51;		// Serial number of this version
 localparam Penny_serialno = 8'd00;		// Use same value as equ1valent Penny code 
 localparam Merc_serialno = 8'd00;		// Use same value as equivalent Mercury code
 
@@ -1398,9 +1401,6 @@ generate
           C122_sync_phase_word[c] <= C122_ratio[c][56:25]; // B57 -> B32 number since R is always >= 0  
       end	
     end
-
-//assign phase word for Rx2 depending upon whether common_Merc_freq is asserted
-assign Rx2_phase_word = common_Merc_freq ? C122_sync_phase_word[0] : C122_sync_phase_word[1];
 	 
 	cdc_mcp #(48)			// Transfer the receiver data and strobe from C122_clk to IF_clk
 		IQ_sync (.a_data ({rx_I[c], rx_Q[c]}), .a_clk(C122_clk),.b_clk(IF_clk), .a_data_rdy(strobe[c]),
@@ -1408,6 +1408,9 @@ assign Rx2_phase_word = common_Merc_freq ? C122_sync_phase_word[0] : C122_sync_p
 
   end
 endgenerate
+
+//assign phase word for Rx2 depending upon whether common_Merc_freq is asserted
+assign Rx2_phase_word = common_Merc_freq ? C122_sync_phase_word[0] : C122_sync_phase_word[1];
 				
 				// set receiver module input sources
 wire [15:0] select_input_special;
@@ -1449,7 +1452,7 @@ receiver receiver_inst1(	// Rx2
 	//control
 	.clock(C122_clk_2),
 	.rate(rate),
-	.frequency(C122_sync_phase_word[1]),
+	.frequency(Rx2_phase_word),
 	.out_strobe(strobe[1]),
 	//input
 	.in_data(select_input_RX[1]),

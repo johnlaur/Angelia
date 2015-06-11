@@ -297,3 +297,4 @@ set_global_assignment -name VERILOG_FILE Polyphase_FIR/firram36I_1024.v
 set_global_assignment -name VERILOG_FILE Polyphase_FIR/firromI_1024.v
 set_global_assignment -name VERILOG_FILE Polyphase_FIR/FirInterp8_1024.v
 set_global_assignment -name QIP_FILE C122_PLL.qip
+set_global_assignment -name VERILOG_FILE Angelia_v5.1.v
