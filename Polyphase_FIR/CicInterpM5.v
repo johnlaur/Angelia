@@ -12,14 +12,14 @@ module CicInterpM5(
 	output signed [OBITS-1:0] y_imag
 	);
 	
-	parameter RRRR = 320;		// interpolation; limited by size of counter
+	parameter RRRR = 160;		// interpolation; limited by size of counter
 	parameter IBITS = 20;		// input bits
 	parameter OBITS = 16;		// output bits
-	parameter GBITS = 34;		//log2(RRRR ** 4);	// growth bits: growth is R**M / R
+	parameter GBITS = 30;		//log2(RRRR ** 4);	// growth bits: growth is R**M / R
 	// Note: log2() rounds UP to the next integer - Not available in Verilog!
 	localparam CBITS = IBITS + GBITS;	// calculation bits
 
-	reg [8:0] counter;		// increase for higher maximum RRRR  **** was [7:0]
+	reg [9:0] counter;		// increase for higher maximum RRRR  **** was [7:0]
 
 	reg signed [CBITS-1:0] x0, x1, x2, x3, x4, x5, dx0, dx1, dx2, dx3, dx4;		// variables for comb, real
 	reg signed [CBITS-1:0] y1, y2, y3, y4, y5;	// variables for integrator, real
@@ -29,8 +29,10 @@ module CicInterpM5(
 	wire signed [CBITS-1:0] sxtxr, sxtxi;
 	assign sxtxr = {{(CBITS - IBITS){x_real[IBITS-1]}}, x_real};	// sign extended
 	assign sxtxi = {{(CBITS - IBITS){x_imag[IBITS-1]}}, x_imag};
-	assign y_real = y5[CBITS-1 -:OBITS] + y5[37];		// output data  with truncation to remove DC spur
-	assign y_imag = s5[CBITS-1 -:OBITS] + s5[37];
+	//assign y_real = y5[CBITS-1 -:OBITS] + y5[GBITS-1];		// output data  with truncation to remove DC spur
+	//assign y_imag = s5[CBITS-1 -:OBITS] + s5[GBITS-1]; 		// was 32
+	assign y_real = y5[CBITS-1 -:OBITS]; //+ y5[33];		// output data  with truncation to remove DC spur
+	assign y_imag = s5[CBITS-1 -:OBITS]; //+ s5[33]; 		// was 32
 	
 	initial
 	begin
@@ -43,9 +45,9 @@ module CicInterpM5(
 		if (clock_en)
 		begin
 			// (x0, q0) -> comb -> (x5, q5) -> interpolate -> integrate -> (y5, s5)
-			if (counter == RRRR - 1)
+			if (counter == RRRR - 10'd1)
 			begin	// Process the sample (x0, q0) to get (x5, q5)
-				counter <= 1'd0;
+				counter <= 10'd0;
 				x0 <= sxtxr;
 				q0 <= sxtxi;
 				req <= 1'd1;
@@ -74,7 +76,7 @@ module CicInterpM5(
 			end
 			else
 			begin
-				counter <= counter + 1'd1;
+				counter <= counter + 10'd1;
 				x5 <= 0;	// stuff a zero for (x5, q5)
 				q5 <= 0;
 				req <= 1'd0;

@@ -98,15 +98,14 @@ module iambic (
 				input clock,					
 				input [5:0] cw_speed,			// 1 to 60 WPM
 				input iambic,						// 0 = straight/bug,  1 = Iambic 
-				input keyer_mode,			      // 0 = Mode A, 1 = Mode B
+				input keyer_mode,					// 0 = Mode A, 1 = Mode B
 				input [7:0] weight, 				// 33 to 66, nominal is 50
 				input letter_space,				// 0 = off, 1 = on
 				input dot_key,						// dot paddle  input, active high
 				input dash_key,					// dash paddle input, active high
 				input CWX,						   // CW data from PC active high
 				input paddle_swap,				// swap if set
-				output reg keyer_out,				// keyer output, active high
-				input IO4							// additional CW key via digital input IO4, debounced, inverted
+				output reg keyer_out				// keyer output, active high
 				);
 				
 parameter   clock_speed = 30;					// default clock speed of 30kHz from PLL 
@@ -152,7 +151,7 @@ case (key_state)
 // wait for key press
 LOOP:
 	begin
-		 if(!iambic) begin					      // Straight/External key or bug
+		 if(!iambic) begin							// Straight/External key or bug
 			if (dash)									// send manual dashes
 				keyer_out <= 1'b1;
 			else if (dot)								// and automatic dots
@@ -164,7 +163,7 @@ LOOP:
 				key_state <= PREDOT;
 			else if (dash)
 				key_state <= PREDASH;
-			else keyer_out <= (CWX | IO4);					// neither so use CWX or IO4 ext CW digital input
+			else keyer_out <= CWX;					// neither so use CWX
 		end 	
 	end 
 		
@@ -214,7 +213,7 @@ SENDDASH:
 		else delay <= delay  + 1;
 		
 	// if Mode A and both padles are relesed then clear dot memory
-	if (keyer_mode == 0) begin	
+	if (keyer_mode == 0 ) begin	
 		if (!dot & !dash)
 				dot_memory <= 0;
 	end

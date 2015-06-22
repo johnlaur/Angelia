@@ -21,37 +21,29 @@ Boston, MA  02110-1301, USA.
 //------------------------------------------------------------------------------
 
 //------------------------------------------------------------------------------
-//           Copyright (c) 2013 Phil Harman, VK6APH 
+//           Copyright (c) 2013,2015 Phil Harman, VK6(A)PH 
 //------------------------------------------------------------------------------
 
 // 2013 Jan 26 - varcic now accepts 2...40 as decimation and CFIR
 //               replaced with Polyphase FIR - VK6APH
+// 2015 Apr 20 - cic now by Jeremy McDermond, NH6Z
+//					- single polyphase FIR Filter
 
 
 
 module receiver2(
   input clock,                  //122.88 MHz
-  input [5:0] rate,             //48k....960k
   input [31:0] frequency,
+  input [15:0] sample_rate,
   output out_strobe,
   input signed [15:0] in_data,
   output signed [23:0] out_data_I,
-  output signed [23:0] out_data_Q,
-  output test_strobe3
+  output signed [23:0] out_data_Q
   );
 
 wire signed [21:0] cordic_outdata_I;
 wire signed [21:0] cordic_outdata_Q;
-
-// gain adjustment, reduce by 6dB to match previous receiver code.
-//wire signed [23:0] out_data_I;
-//wire signed [23:0] out_data_Q;
-
-//assign out_data_I = (out_data_I2 >>> 1);
-//assign out_data_Q = (out_data_Q2 >>> 1);
-
-
-
+reg [5:0] rate0, rate1;
 
 //------------------------------------------------------------------------------
 //                               cordic
@@ -67,84 +59,82 @@ cordic cordic_inst(
 
   
  
-  // CIC M = 5, R = 8  + Vari CIC m = 5, R = 2..40  + FIR R = 8.
+// Select CIC decimation rates based on sample_rate
+
+	always @ (sample_rate)				
+	begin 
+		case (sample_rate)	
+		 16'd48: begin rate0 <= 6'd40; rate1 = 6'd32; end
+		 16'd96: begin rate0 <= 6'd20; rate1 = 6'd32; end		 
+		16'd192: begin rate0 <= 6'd10; rate1 = 6'd32; end		  
+		16'd384: begin rate0 <= 6'd5;	 rate1 = 6'd32; end	  
+		16'd768: begin rate0 <= 6'd5;	 rate1 = 6'd16; end	
+	  16'd1536: begin rate0 <= 6'd5;	 rate1 = 6'd8;  end
+	  
+		default: begin rate0 <= 6'd40; rate1 = 6'd32; end
+		endcase
+	end 
+
   
 // Receive CIC filters followed by FIR filter
 wire decimA_avail, decimB_avail;
-wire signed [17:0] decimA_real, decimB_real;
-wire signed [17:0] decimA_imag, decimB_imag;
+wire signed [17:0] decimA_real;
+wire signed [17:0] decimA_imag;
+wire signed [23:0] decimB_real, decimB_imag;
 
-//I channel
 wire cic_outstrobe_2;
 wire signed [23:0] cic_outdata_I2;
 wire signed [23:0] cic_outdata_Q2;
 
 //I channel
-cic #(.STAGES(3), .DECIMATION(8), .IN_WIDTH(22), .ACC_WIDTH(31), .OUT_WIDTH(18))      
-  cic_inst_I2(
-    .clock(clock),
-    .in_strobe(1'b1),
-    .out_strobe(decimA_avail),
-    .in_data(cordic_outdata_I),
-    .out_data(decimA_real)
-    );
-
-
+cic #(.STAGES(3), .MIN_DECIMATION(5), .MAX_DECIMATION(40), .IN_WIDTH(22), .OUT_WIDTH(18))
+ cic_inst_I2(.decimation(rate0),
+				 .clock(clock), 
+				 .in_strobe(1'b1),
+				 .out_strobe(decimA_avail),
+				 .in_data(cordic_outdata_I),
+				 .out_data(decimA_real)
+				 );
+				 
 //Q channel
-cic #(.STAGES(3), .DECIMATION(8), .IN_WIDTH(22), .ACC_WIDTH(31), .OUT_WIDTH(18))  
-  cic_inst_Q2(
-    .clock(clock),
-    .in_strobe(1'b1),
-    .out_strobe(),
-    .in_data(cordic_outdata_Q),
-    .out_data(decimA_imag)
-    );
-
-
-
-				
-//  Variable CIC filter - in width = out width = 18 bits, decimation rate = 2 to 40 
+cic #(.STAGES(3), .MIN_DECIMATION(5), .MAX_DECIMATION(40), .IN_WIDTH(22), .OUT_WIDTH(18)) 
+ cic_inst_Q2(.decimation(rate0),
+				 .clock(clock), 
+				 .in_strobe(1'b1),
+				 .out_strobe(),
+				 .in_data(cordic_outdata_Q),
+				 .out_data(decimA_imag)
+				 );			
+			
 
 wire cic_outstrobe_1;
 wire signed [22:0] cic_outdata_I1;
 wire signed [22:0] cic_outdata_Q1;
 
-varcic #(.STAGES(5), .IN_WIDTH(18), .ACC_WIDTH(45), .OUT_WIDTH(18))
-  varcic_inst_I1(
-    .clock(clock),
-    .in_strobe(decimA_avail),
-    .decimation(rate),
-    .out_strobe(decimB_avail),
-    .in_data(decimA_real),
-    .out_data(decimB_real)
-    );
 
+cic #(.STAGES(11), .MIN_DECIMATION(8), .MAX_DECIMATION(32), .IN_WIDTH(18), .OUT_WIDTH(24)) 
+ varcic_inst_I1(.decimation(rate1),
+				 .clock(clock), 
+				 .in_strobe(decimA_avail),
+				 .out_strobe(decimB_avail),
+				 .in_data(decimA_real),
+				 .out_data(decimB_real)
+				 );
+				 
 
 //Q channel
-varcic #(.STAGES(5), .IN_WIDTH(18), .ACC_WIDTH(45), .OUT_WIDTH(18))
-  varcic_inst_Q1(
-    .clock(clock),
-    .in_strobe(decimA_avail),
-    .decimation(rate),
-    .out_strobe(),
-    .in_data(decimA_imag),
-    .out_data(decimB_imag)
-    );
-
+cic #(.STAGES(11), .MIN_DECIMATION(8), .MAX_DECIMATION(32), .IN_WIDTH(18), .OUT_WIDTH(24)) 
+ varcic_inst_Q1(.decimation(rate1),
+				 .clock(clock), 
+				 .in_strobe(decimA_avail),
+				 .out_strobe(),
+				 .in_data(decimA_imag),
+				 .out_data(decimB_imag)
+				 );
+				 
 		
-				
-//firX8R8 fir2 (clock, decimB_avail, decimB_real, decimB_imag, out_strobe, out_data_I, out_data_Q);
+// Polyphase decimate by 2 FIR Filter
+firX2R2 fir3 (clock, decimB_avail, decimB_real, decimB_imag, out_strobe, out_data_I, out_data_Q);
 
-wire out_strobe1;
-wire signed [23:0] out_data_I2;
-wire signed [23:0] out_data_Q2;		
-
-// cascaded Polyphase FIR filters, decimate by 4 and decimate by 2. 
-firX4R4 fir2 (clock, decimB_avail, decimB_real, decimB_imag, out_strobe1, out_data_I2, out_data_Q2);
-firX2R2 fir3 (clock, out_strobe1, out_data_I2, out_data_Q2, out_strobe, out_data_I, out_data_Q);
-
-  
-  
-assign test_strobe3 = out_strobe;
 
 endmodule

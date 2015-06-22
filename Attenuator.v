@@ -18,7 +18,7 @@
 //  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
-//  Attenuator - 2014  (C) Phil Harman VK6APH
+//  Attenuator - 2011  (C) Phil Harman VK6APH
 
 //  Driver for Minicircuits DAT-33-SP+ attenuator
 //  C16 set = 16dB, C8 set = 8dB etc

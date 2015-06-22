@@ -21,10 +21,10 @@ case (TX_state)
 
 5'd0:		begin
 				ready <= 0;
-				if(CLRCLK) TX_state <= 5'd1;				// loop until TX_LRCLK is low
+				if(CLRCLK) TX_state <= 5'd1;				// loop until TX_LRCLK is high so we grab the correct samples for line in.
 			end
 		
-5'd1:		if(!CLRCLK) TX_state <= TX_state + 1'b1; 	// loop until TX_LRCLK is high 
+5'd1:		if(!CLRCLK) TX_state <= TX_state + 1'b1; 	// loop until TX_LRCLK is low
 
 5'd18:	begin
 				mic_data <= Tx_q;								// microphone or line data

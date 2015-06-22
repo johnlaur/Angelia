@@ -56,7 +56,7 @@
 // Maximum NTAPS is 2048 (or less).
 
 /*
-   Max mumber of TAPS is approx 128 in order to meet max sampling rate requirements. We need 512 taps
+   Max mumber of TAPS is approx 128 in order to meet max sampling rate requirements. We need 256 taps
    for the 0.01dB ripple, 110dB stop band decimate by 2 Polyphase FIR.  In order to do this use two banks
    of coefficients, one holds coefficients 0 - 127 and the other 128 - 255.
    In which case the second bank of RAM needs to have the input data written at starting address 128 rather
@@ -96,11 +96,11 @@ module firX2R2 (
 	output wire signed [OBITS-1:0] y_real,	// y is the filtered output
 	output wire signed [OBITS-1:0] y_imag);
 	
-	localparam ADDRBITS	= 8;					// Address bits for 18/48 x 256 rom/ram blocks
+	localparam ADDRBITS	= 8;					// Address bits for 18/48 x 128 rom/ram blocks
    localparam INBITS    = 24;					// width of I and Q input samples	
 	
 	parameter
-		TAPS 			= 128,						// Number of coefficients per FIR - total is 128 * 4 = 512
+		TAPS 			= 64,						   // Number of coefficients per FIR - total is 64 * 4 = 256
    	ABITS			= 24,							// adder bits
 		OBITS			= 24;							// output bits
 	
@@ -163,9 +163,9 @@ module firX2R2 (
 	// Dual bank polyphase decimate by 2 FIR. Note that second bank needs a RAM write offset of TAPS.
 
 	fir256d #("coefEa.mif", ABITS, TAPS) A (clock, waddr, raddr, weA, x_real, x_imag, RaccAa, IaccAa);					// first bank odd coeff
-	fir256d #("coefEb.mif", ABITS, TAPS) B (clock, (waddr + 8'd128), raddr, weA, x_real, x_imag, RaccAb, IaccAb);	// second bank
+	fir256d #("coefEb.mif", ABITS, TAPS) B (clock, (waddr + 8'd64), raddr, weA, x_real, x_imag, RaccAb, IaccAb);	// second bank
 	fir256d #("coefFa.mif", ABITS, TAPS) C (clock, waddr, raddr, weB, x_real, x_imag, RaccBa, IaccBa);  				// first bank even coeff
-	fir256d #("coefFb.mif", ABITS, TAPS) D (clock, (waddr + 8'd128), raddr, weB, x_real, x_imag, RaccBb, IaccBb); 	// second bank
+	fir256d #("coefFb.mif", ABITS, TAPS) D (clock, (waddr + 8'd64), raddr, weB, x_real, x_imag, RaccBb, IaccBb); 	// second bank
 
 
 endmodule
@@ -190,7 +190,7 @@ module fir256d(
 	output reg signed [ABITS-1:0] Iaccum
 	);
 
-	localparam ADDRBITS	= 8;								// Address bits for 18/36 X 256 rom/ram blocks
+	localparam ADDRBITS	= 8;								// Address bits for 18/36 X 128 rom/ram blocks
 	localparam COEFBITS	= 18;								// coefficient bits
 	localparam INBITS		= 24;								// I and Q sample width 
 	

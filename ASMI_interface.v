@@ -110,13 +110,14 @@ case (state)
 // let user know that erase has completed
 3:	begin
 			erase_done <= 1'b1;
-			state <= 4;
 			reset_delay <= 0;
+			state <= 4;
 	end
 	
-// wait for the Tx to ack then return, loop here otherwise
+// wait for the Tx to ack or time out then return
 4:	begin
-		if (erase_done_ACK) state <= 0;
+		if (erase_done_ACK | reset_delay > 25000000 ) state <= 0;		 
+		else reset_delay <= reset_delay + 1'b1;
 	end
 	
 // program EPCS16 with data from PC
@@ -151,7 +152,7 @@ case (state)
 8:	begin 
 	write <= 0;
 	write_enable <= 0;
-		if (send_more_ACK) send_more <= 0;		// clear send flag once Tx has seen it
+		if (send_more_ACK) send_more <= 0;	// clear send flag once Tx has seen it
 		if (page == num_blocks) begin			// all done so exit			
 			 send_more <= 1'b1;					// let the PC know that the final block has been received.
 			 state <= state + 1'b1;

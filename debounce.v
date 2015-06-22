@@ -5,9 +5,9 @@
 // Button must be stable for debounce time before state changes,
 // debounce time is dependent on clk and counter_bits
 
-// eg with clock = 24MHz and counter_bits = 18 stable time is 
+// eg with clock = 12.288MHz and counter_bits = 17 stable time is 
 
-//  (10^-6/24) * 2^18 = 11mS
+//  (10^-6/12.288) * 2^17 = 11mS
 
 //  Phil Harman VK6APH 15th February 2006
 
@@ -16,7 +16,7 @@ module debounce(clean_pb, pb, clk);
 	output clean_pb;
 	input pb, clk;
 	
-parameter counter_bits = 18;
+parameter counter_bits = 17;
 
 reg [counter_bits:0] count;
 reg [3:0] pb_history;
